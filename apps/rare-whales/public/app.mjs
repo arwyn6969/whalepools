@@ -3,6 +3,8 @@ import {MAX_AGENTS,validateRoster} from '../src/dna.mjs';
 import {NEUTRAL_PROFILE} from '../src/dna.mjs';
 import {replayPool,replayAgent} from '../src/pool.mjs';
 import {createPortraitLoader} from './portraits.mjs';
+import {createWalletPicker} from './wallet-picker.mjs';
+const pickWallet=createWalletPicker(window,document);
 const $=s=>document.querySelector(s);
 const asset=p=>new URL(p.replace(/^\//,''),import.meta.url).href;
 let chartState;
@@ -147,8 +149,8 @@ async function signIn(){
  if(club?.demo){location.hash='seat';return;}
  if(!club){message('The demo status is still loading. Please try again in a moment.');return;}
  if(busy)return;busy=true;message('');
- try{provider=window.ethereum;if(!provider?.request)throw Error('Open this site in a browser with your wallet extension, or inside your wallet’s browser. The sandbox works without a wallet.');
-  if(provider.on&&!watchedProviders.has(provider)){provider.on('accountsChanged',logout);provider.on('chainChanged',logout);watchedProviders.add(provider);}
+ try{const wallet=await pickWallet();if(!wallet)return;provider=wallet.provider;
+  if(provider.on&&!watchedProviders.has(provider)){const watched=provider,changed=()=>{if(provider===watched)logout();};provider.on('accountsChanged',changed);provider.on('chainChanged',changed);watchedProviders.add(provider);}
   const addresses=await provider.request({method:'eth_requestAccounts'});if(!addresses?.[0])throw Error('No wallet selected.');
   if(Number(await provider.request({method:'eth_chainId'}))!==CHAIN_ID)throw Error('Select Robinhood Chain in your wallet, then connect again.');
   const epoch=walletRevision;
