@@ -1,6 +1,6 @@
 # Whale Pools
 
-Build a company of NFT whale traders. Pick your whaleys, inspect their fixed DNA and explore historical paper results.
+Build a company of NFT whale traders. Pick your whales, inspect their fixed DNA and explore historical paper results.
 
 **[Play the demo](https://arwyn.party/whalepools/)** · **[Whale Wax concept review](apps/rare-whales/ECONOMY.md)** · **[Technical guide](apps/rare-whales/README.md)**
 

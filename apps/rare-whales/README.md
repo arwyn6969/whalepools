@@ -1,6 +1,6 @@
 # Whale Pools — Rare Whales trading companies
 
-RW-004, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
+RW-005, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
 
 ## Run
 
@@ -65,7 +65,7 @@ Data: inspected UBTC/USDC Hyperliquid spot candles, 1h with 4h signal context, *
 
 ## Hosting and next milestone
 
-The demo targets [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker with main routes `/whalepools` and `/whalepools/*`, plus aliases `/whalepool` and `/whalepool/*` which redirect to the plural form, preserving query and path. It has no bindings, secrets, database, RPC calls, authentication, token or money-changing endpoints. Eleven explicitly allowed static files are embedded as gzip data in its small bundle. No existing owner API, DB, schedule or paid service is changed.
+The demo targets [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker with main routes `/whalepools` and `/whalepools/*`, plus aliases `/whalepool` and `/whalepool/*` which redirect to the plural form, preserving query and path. It has no bindings, secrets, database, RPC calls, authentication, token or money-changing endpoints. Fifteen explicitly allowed static files are embedded as gzip data in its small bundle. No existing owner API, DB, schedule or paid service is changed.
 
 `npm run build:demo` generates `build/cloudflare-worker.mjs`; `npm run deploy:check` validates the Wrangler candidate and `npm run deploy` publishes it using an authenticated Cloudflare CLI. The initial deployment can also use the Cloudflare API plugin with the same ES module and metadata. `wrangler.jsonc` is the reproducible deployment configuration. The original authenticated prototype remains in `src/worker.mjs` and is not imported into the demo bundle.
 
@@ -88,5 +88,7 @@ The original private research repository retains the dated RW-001/RW-002 researc
 Select a PFP or the scoreboard selector to view an agent; choose Whole company to restore aggregated results. Net P/L, completed trades, win rate and drawdown use the existing replay outputs. Expanded stats describe average/best/worst trade, profit factor and skipped entries. The time slider reads the historical curve; turning off the holding comparison changes chart scale only. Reduced-motion preferences disable decorative animation.
 
 The Tactic Arcade compares all four tactics for the selected whale, using the same DNA, capital share and historical dates. Assign a card to update that agent. It shows net return, drawdown, count and the return difference versus neutral DNA. It neither chooses a winner automatically nor changes the NFT hash. Leverage and a prospective trading passport remain proposals, explained in the interface.
+
+The Wax Lab uses original SVG pixel illustrations for a 90s-inspired Whale Wax surf tub, upright surfboard, neon-green Holy Brick of Kek and gemmed crown. Rebuild the art with `node scripts/draw-wax-art.mjs`. These are original game illustrations, not copied surf-wax packaging.
 
 The Wax Lab offers a free ephemeral visual fit check for Surfboard, Holy Brick of Kek and Captain’s Drip. None is purchasable or minted. Prospective leaderboard and ENS displays are planned, not populated with fictional owners. See [ECONOMY.md](ECONOMY.md) for the staking review, weak spots, build order and effort estimates.

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" shape-rendering="crispEdges"><title>Captain’s Drip</title><desc>A gold pixel crown with turquoise gems, pink velvet, star tips and a whale-tail crest.</desc>
+ <path d="M82 299h240v15H82z" fill="#18213d" opacity=".18"/>
+ <path d="M70 137h21l41 54 56-94h25l55 93 43-55h20l-25 167H91z" fill="#18213d"/>
+ <path d="M86 158l46 54 65-102 66 103 49-52-20 124H106z" fill="#ffce45"/>
+ <path d="M110 219l22 10 65-93 64 94 33-22-9 48H116z" fill="#f89b35"/>
+ <path d="M121 245h163v25H121z" fill="#ff72b8"/>
+ <rect x="101" y="275" width="198" height="15" fill="#fff5d2"/><rect x="111" y="291" width="179" height="11" fill="#bd7730"/>
+ <path d="M181 226h30v11h11v27h-11v11h-30v-11h-11v-27h11z" fill="#18213d"/>
+ <rect x="181" y="238" width="30" height="25" fill="#69efe1"/><rect x="181" y="238" width="11" height="11" fill="#fff5d2"/><rect x="138" y="246" width="14" height="14" fill="#69efe1"/><rect x="248" y="246" width="14" height="14" fill="#69efe1"/>
+ <path d="M78 103h9v18h18v9h-18v18h-9v-18h-18v-9h18z" fill="#fff5d2"/><path d="M196 62h9v18h18v9h-18v18h-9v-18h-18v-9h18z" fill="#69efe1"/><path d="M321 102h9v18h18v9h-18v18h-9v-18h-18v-9h18z" fill="#ff72b8"/>
+</svg>

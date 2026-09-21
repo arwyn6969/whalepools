@@ -1,7 +1,7 @@
 import season from '../season.json' with {type:'json'};
 import { createApi } from './api.mjs';
 const api=createApi({season});
-const paths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif']);
+const paths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif','/art/wax-tub.svg','/art/surfboard.svg','/art/holy-brick.svg','/art/captain-crown.svg']);
 export default {
   async fetch(request,env) {
     const response=await api(request,env);

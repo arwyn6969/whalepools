@@ -9,7 +9,7 @@ const worker=(await import(localAuth?'../build/worker.mjs':'../build/demo-worker
 await mkdir(path.join(app,'work'),{recursive:true});
 const DB=database(path.join(app,'work/club.sqlite'));
 const port=Number(process.env.RW_PORT||48372),origin=`http://127.0.0.1:${port}`;
-const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.avif':'image/avif','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.avif':'image/avif','.svg':'image/svg+xml','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
 const ASSETS={async fetch(request){let name=new URL(request.url).pathname;if(name==='/')name='/index.html';try{const data=await readFile(path.join(app,'build/public',name));return new Response(request.method==='HEAD'?null:data,{headers:{'content-type':types[path.extname(name)]||'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}}};
 const server=http.createServer(async(req,res)=>{
  try{

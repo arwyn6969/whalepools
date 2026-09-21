@@ -1,7 +1,7 @@
 import season from '../season.json' with {type:'json'};
 import {COLLECTIONS,STRATEGIES} from './config.mjs';
 
-export const demoPaths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif']);
+export const demoPaths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif','/art/wax-tub.svg','/art/surfboard.svg','/art/holy-brick.svg','/art/captain-crown.svg']);
 export const demoHeaders={
  'content-security-policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer','permissions-policy':'camera=(), microphone=(), geolocation=()',

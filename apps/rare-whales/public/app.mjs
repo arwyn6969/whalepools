@@ -55,7 +55,7 @@ $('#agent-roster').addEventListener('click',event=>{
 $('#agent-roster').addEventListener('change',event=>{if(event.target.dataset.tactic){roster=roster.map(a=>key(a)===event.target.dataset.tactic?{...a,strategy:event.target.value}:a);rosterChanged();}});
 function selectedAgent(){return company?.agents.find(a=>key(a)===selected);}
 function renderTactics(a){
- $('#tactic-whale').textContent=a?`${label(a)} · ${money(a.startEquity)} per replay · fixed DNA ${a.profile.build}. Select another whaley above to compare its tactics.`:'Add a whaley to compare these four tactics with the same budget.';
+ $('#tactic-whale').textContent=a?`${label(a)} · ${money(a.startEquity)} per replay · fixed DNA ${a.profile.build}. Select another whale above to compare its tactics.`:'Add a whale to compare these four tactics with the same budget.';
  $('#tactic-cards').innerHTML=Object.entries(STRATEGIES).map(([id,t],i)=>{
   const run=a?replayAgent(practice,id,a.profile,a.startEquity):null,neutral=a?replayAgent(practice,id,NEUTRAL_PROFILE,a.startEquity):null,s=run?.stats,active=a?.strategy===id;
   return `<article class="tactic-card tactic-${id} ${active?'is-assigned':''}"><div class="tactic-heading"><span class="tactic-icon" aria-hidden="true">${t.icon}</span><span>0${i+1} / ${t.stage.toUpperCase()}</span></div><h4>${t.name}</h4><p class="tactic-kind">${t.kind}</p><p class="tactic-description">${t.description}</p><dl class="tactic-stats"><div><dt>Net return</dt><dd class="${s&&s.returnPct>=0?'positive':'negative'}">${s?signed(s.returnPct)+'%':'—'}</dd></div><div><dt>Max drawdown</dt><dd>${s?s.maxDrawdown.toFixed(2)+'%':'—'}</dd></div><div><dt>Trades</dt><dd>${s?s.count:'—'}</dd></div><div><dt>DNA effect</dt><dd>${s?signed(s.returnPct-neutral.stats.returnPct)+' pp':'—'}</dd></div></dl><details><summary>HOW THIS TACTIC TRADES</summary><p>${t.rules}</p><p>Confirmation at candle close; earliest fill at next open. After-cost reward/risk must be at least 1.5. DNA adjusts risk, target distance and allocation. Fees 0.08% + slippage 0.05% per side.</p></details><button type="button" data-assign="${id}" aria-pressed="${active}" ${!a?'disabled':''}>${active?'✓ ASSIGNED':`ASSIGN ${t.name.toUpperCase()}`}<span aria-hidden="true">→</span></button></article>`;
@@ -96,7 +96,7 @@ function renderScoreboard(){
  for(const button of document.querySelectorAll('[data-view]')){button.setAttribute('aria-pressed',String(button.dataset.view===scope));button.disabled=button.dataset.view==='agent'&&!a;}
  const run=scope==='pool'?company:a.result,baseline=scope==='pool'?company.baseline:a.baseline,initial=scope==='pool'?1000:a.startEquity;
  $('#chart-title').textContent=scope==='pool'?'YOUR COMPANY, AT A GLANCE.':label(a).toUpperCase();
- $('#scope-banner').innerHTML=scope==='pool'?`<span class="scope-icon" aria-hidden="true">♛</span><div><b>WHOLE COMPANY</b><span>${company.agents.length} agents · $1,000 combined starting budget</span></div>`:`${avatar(a)}<div><b>${esc(label(a))}</b><span>${esc(a.profile.name)} · ${money(a.startEquity)} starting share</span></div><a href="#roster">CHANGE WHALEY ↑</a>`;
+ $('#scope-banner').innerHTML=scope==='pool'?`<span class="scope-icon" aria-hidden="true">♛</span><div><b>WHOLE COMPANY</b><span>${company.agents.length} agents · $1,000 combined starting budget</span></div>`:`${avatar(a)}<div><b>${esc(label(a))}</b><span>${esc(a.profile.name)} · ${money(a.startEquity)} starting share</span></div><a href="#roster">CHANGE WHALE ↑</a>`;
  renderTradingStats(run);
  $('#chart-description').textContent=scope==='pool'?`${company.agents.length} agents share $1,000. Every curve is a reconstruction on the same old sample.`:`${STRATEGIES[a.strategy].name}. Same candles and starting share; only the DNA modifiers differ.`;
  $('#baseline-label').textContent=scope==='pool'?'Same crew, default stats':'Same agent, default stats';
@@ -180,12 +180,13 @@ function renderCursor(){
 }
 $('#replay-cursor').addEventListener('input',renderCursor);
 $('#show-hold').addEventListener('change',renderScoreboard);
-const equipmentCopy={surfboard:['THE SURFBOARD','Proposed: collect accrued Wax automatically for this whale. No reward multiplier, no trading boost.'],brick:['HOLY BRICK OF KEK','Proposed: a ridiculous HQ trophy and a saved roster preset. The brick does not reverse losses.'],crown:['CAPTAIN’S DRIP','Proposed: whaley cosmetics and company banners. Royal vibes, exactly the same trading rules.']};
+const equipmentCopy={surfboard:['THE SURFBOARD','Proposed: make collecting an eligible whale’s allowance easier. Automation needs gas and permission; no reward multiplier or trading boost.'],brick:['HOLY BRICK OF KEK','Neon green. Spiritually unreasonable. Proposed: an HQ trophy and saved roster preset. The brick does not reverse losses.'],crown:['CAPTAIN’S DRIP','Proposed: whale cosmetics and company banners. Royal vibes, exactly the same trading rules.']};
+const equipmentArt={surfboard:'surfboard',brick:'holy-brick',crown:'captain-crown'};
 function renderOutfit(){
- const a=selectedAgent();$('#outfit-agent').innerHTML=company?.agents.length?company.agents.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join(''):'<option>No whaleys in this roster</option>';$('#outfit-agent').disabled=!a;
+ const a=selectedAgent();$('#outfit-agent').innerHTML=company?.agents.length?company.agents.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join(''):'<option>No whales in this roster</option>';$('#outfit-agent').disabled=!a;
  if(a)$('#outfit-agent').value=selected;
  $('#outfit-stage').className='outfit-stage outfit-'+equipment;
- $('#outfit-stage').innerHTML=a?`${avatar(a)}<span class="outfit-accessory" aria-hidden="true">${equipment==='brick'?'KEK':equipment==='crown'?'♛':''}</span><span class="outfit-name">${esc(label(a))}</span>`:'<p>Add a whaley in Pool HQ to try an outfit.</p>';
+ $('#outfit-stage').innerHTML=a?`${avatar(a)}<span class="outfit-accessory" aria-hidden="true"><img src="${asset('/art/'+equipmentArt[equipment]+'.svg')}" alt=""></span><span class="outfit-name">${esc(label(a))}</span>`:'<p>Add a whale in Pool HQ to try an outfit.</p>';
  $('#outfit-title').textContent=equipmentCopy[equipment][0];$('#outfit-description').textContent=equipmentCopy[equipment][1];
  for(const b of document.querySelectorAll('[data-equipment]'))b.setAttribute('aria-pressed',String(b.dataset.equipment===equipment));
 }
