@@ -1,6 +1,6 @@
 # Whale Pools — Rare Whales trading companies
 
-RW-009, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
+RW-009, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model. The free arcade has its own one-NFT access rule. No token, live trader, company season or pooled deposits have launched.
 
 **Free arcade launch:** wallet sign-in, fresh NFT ownership checks, server-calculated historical scores, editable public company entries and withdrawal are implemented. The public game requires one Rare Whales or WhaleStreet NFT to publish; anyone can use the sandbox. The original founding-season membership rules are preserved separately. Wax and payments are deferred; prepared contracts remain undeployed. See [ARCADE.md](ARCADE.md) for current rules, data, transfer policy and operations.
 
@@ -47,19 +47,17 @@ Wallet, ownership, nickname, rarity, price, metadata traits and time do not affe
 
 ## Access and ownership
 
-A wallet qualifies through an approved Rare Whales promotional 1/1 selected as its company captain; the configured founder wallet; or 10+ NFTs **combined across Rare Whales and WhaleStreet in the same wallet**. A non-founder must own its captain and all its agents. Choose the approved 1/1 as captain when using that route.
+The live free arcade requires at least one Rare Whales or WhaleStreet NFT in the signed-in wallet. Every agent and the chosen captain must belong to it at the same Robinhood block. Sign-in uses single-use SIWE challenges, opaque HttpOnly sessions, origin checks and rate limits. Publishing computes all DNA and scores on the server and replaces the wallet's current entry; failed checks preserve the previous entry. Owners can withdraw their public company.
 
-The local membership prototype (not enabled on the public demo) uses expiring single-use SIWE challenges, public-client signature verification, opaque HttpOnly sessions, origin checks and bounded inputs/rates. Saving a company freshly verifies its captain, access route and every agent at the same Robinhood block (two blocks behind head). The server derives all DNA itself and ignores submitted modifiers. One NFT cannot belong to two registered pools in the same season, even after transfer. Company and roster writes are one transaction; collisions preserve the prior company. Withdrawal cascades to its agents. Rule digests and the registration cutoff lock season choices.
+Publication consent covers the company name, wallet address, NFT roster, tactics, DNA, score and ownership snapshot. The board shows real published entries only. Transfers do not delete an old submission: ownership is recorded at submission, not continuously guaranteed. See [ARCADE.md](ARCADE.md) for the full policy and limits. Injected EIP-1193 wallets are supported; WalletConnect/mobile deep links and real smart-contract-wallet integration remain untested.
 
-The public pool directory includes the company name, NFTs, tactics, access route and persisted DNA. It omits the owner address directly, although an NFT can identify its wallet. Publication requires explicit form consent. Private profile/session fields are not projected. Only real registered companies appear; there are no fake competitors or live standings.
-
-This is a wallet limit, not proof of one person. Current membership is checked on save, not continuously revoked after transfers. A final snapshot/transfer/person-level policy is still needed before any consequential season. There are no prizes or financial entitlements. Authentication currently uses injected EIP-1193 extensions; WalletConnect/mobile deep links and real smart-contract-wallet integration remain untested.
+The original draft founding season separately retains the approved Rare Whales 1/1, founder, or ten combined NFTs gate. Its prototype prevents one NFT occupying two companies in that season and fixes membership at its registration cutoff. Those future-season rules do not govern the open historical arcade.
 
 ## Version and research boundaries
 
-`season.json` is now `rare-whales-founding-v3`, with tactic version, modifier version and pool rules included in the policy digest. `season-v1.json` and `season-v2.json` preserve the earlier drafts; existing rows are not rewritten. The local database applies `0001_club.sql` and the additive `0002_pool_agents.sql`; a future D1 deployment must apply both, to its own database.
+`season.json` is now `rare-whales-founding-v3`, with tactic version, modifier version and pool rules included in the policy digest. `season-v1.json` and `season-v2.json` preserve the earlier drafts; existing rows are not rewritten. The arcade uses separate `arcade.json` and migrations 0001–0003 in its dedicated D1 database.
 
-Registration remains closed: `status: draft`, `access.confirmed: false`, empty promotional IDs/founder list and null dates. The owner must supply the approved 1/1 IDs and public wallet. No private keys are needed.
+The original founding season remains closed: `status: draft`, `access.confirmed: false`, empty promotional IDs/founder list and null dates. The owner must supply the approved 1/1 IDs and public wallet. No private keys are needed.
 
 The frozen engine is imported unchanged. Build verifies its original three module hashes and both UBTC dataset hashes. Baseline and neutral replays reproduce every original fill and equity point. The original no-entry-volume-filter controls remain in generated historical data; the company chart instead compares the same roster with and without DNA. DNA is recorded as RC-004; the two additional signal arms are RC-005 / `whale-tactics-v1`. See [TACTICS.md](TACTICS.md) for their complete specification. No new forward window has been started, and no original hypothesis, recorded data, protocol or verdict changes.
 
@@ -67,11 +65,11 @@ Data: inspected UBTC/USDC Hyperliquid spot candles, 1h with 4h signal context, *
 
 ## Hosting and next milestone
 
-The demo targets [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker with main routes `/whalepools` and `/whalepools/*`, plus aliases `/whalepool` and `/whalepool/*` which redirect to the plural form, preserving query and path. It has no bindings, secrets, database, authentication or server transaction endpoints. Once a verified deployment is configured, the browser reads Robinhood RPC and requests claims directly through the holder’s wallet; current configuration has no deployment. Sixteen explicitly allowed static files are embedded as gzip data in its small bundle. No existing owner API, DB, schedule or paid service is changed.
+The free arcade runs at [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker. Routes `/whalepool` and `/whalepool/*` redirect to the plural form, preserving query and path. The Worker has one dedicated D1 binding for authentication and historical leaderboard entries. Eighteen explicitly allowed assets are embedded as gzip data. There are no server transaction endpoints, token deployment, cron jobs or paid subscriptions introduced by this release; unrelated owner APIs and databases are untouched.
 
 `npm run build:demo` generates `build/cloudflare-worker.mjs`; `npm run deploy:check` validates the Wrangler candidate and `npm run deploy` publishes it using an authenticated Cloudflare CLI. The initial deployment can also use the Cloudflare API plugin with the same ES module and metadata. `wrangler.jsonc` is the reproducible deployment configuration. The original authenticated prototype remains in `src/worker.mjs` and is not imported into the demo bundle.
 
-Before a season opens: finalize identities and snapshot behavior; implement a prospective market recorder, incremental paper execution, missing-data status and dated pool outcomes; freeze a separate specification and genuinely future dates; and test real wallet sign-in plus hosted D1 on a separate candidate. The current app has **no running season or automated live trader**. Editing the season status does not create those missing records. It supports historical exploration only.
+Before a season opens: finalize identities and snapshot behavior; implement a prospective market recorder, incremental paper execution, missing-data status and dated pool outcomes; freeze a separate specification and genuinely future dates; and test a real holder's wallet journey and the new recording system on a separate candidate. The current app has **no running season or automated live trader**. Editing the season status does not create those missing records. It supports historical exploration only.
 
 ## Art, font and references
 

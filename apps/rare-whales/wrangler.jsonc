@@ -34,5 +34,8 @@
       "database_id": "4b6d5fb2-551f-4d19-9ead-299f6ab425f7",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  "vars": {
+    "RPC_URL": "https://robinhood.drpc.org"
+  }
 }

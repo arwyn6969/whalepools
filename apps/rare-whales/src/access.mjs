@@ -7,7 +7,7 @@ const abi = [
 ];
 export const canonicalAddress = value => getAddress(value).toLowerCase();
 export function chainClient(env) {
-  return createPublicClient({ transport:http(env.RPC_URL || RPC_URL, {timeout:10000,retryCount:0}) });
+  return createPublicClient({ transport:http(env.RPC_URL || RPC_URL, {timeout:10000,retryCount:2,retryDelay:1000}) });
 }
 export async function ownsAgents({address,agents,block,client}){
  const blockNumber=BigInt(block),wallet=canonicalAddress(address);

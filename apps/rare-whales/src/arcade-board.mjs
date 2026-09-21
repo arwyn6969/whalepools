@@ -25,7 +25,7 @@ export function createArcadeBoard({season,scores,ruleHash,client:injectedClient,
    }
    const client=injectedClient||chainClient(env);let eligibility;
    try{eligibility=await checkSeat({address:me.address,collection,tokenId,season,client});if(eligibility.eligible&&!await ownsAgents({address:me.address,agents,block:eligibility.block,client}))reject(403,'Every NFT in your crew must belong to the signed-in wallet. Remove the example whales first.');}
-   catch(e){if(e instanceof HttpError)throw e;reject(503,'NFT ownership could not be verified. Check your token numbers and try again. Your saved company has not changed.');}
+   catch(e){if(e instanceof HttpError)throw e;const causes=[];for(let cause=e;cause&&causes.length<5;cause=cause.cause)causes.push({name:cause.name,code:cause.code,summary:String(cause.shortMessage||cause.details||cause.message||'').replace(/0x[0-9a-fA-F]{40,}/g,'[redacted]').replace(/https?:\/\/\S+/g,'[redacted]').slice(0,180)});console.error('arcade-ownership-failure',JSON.stringify(causes));reject(503,'NFT ownership could not be verified. Check your token numbers and try again. Your saved company has not changed.');}
    if(path==='/api/eligibility')return eligibility;
    if(!eligibility.eligible)reject(403,eligibility.reason||'This wallet does not qualify.');
    const computed=await scoreArcade(scores,agents),policyHash=await digest(JSON.stringify(policyRecord(season))+ruleHash);
