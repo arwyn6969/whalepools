@@ -24,6 +24,6 @@ export async function demoFetch(request,env){
  url.pathname=path==='/'?'/index.html':path;
  const result=await env.ASSETS.fetch(new Request(url,{method:request.method}));
  const headers=new Headers(result.headers);for(const [k,v]of Object.entries(demoHeaders))headers.set(k,v);
- return new Response(request.method==='HEAD'?null:result.body,{status:result.status,headers});
+ return new Response(request.method==='HEAD'?null:result.body,{status:result.status,headers,encodeBody:headers.has('content-encoding')?'manual':'automatic'});
 }
 export default {fetch:demoFetch};

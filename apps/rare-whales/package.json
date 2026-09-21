@@ -12,7 +12,8 @@
     "test": "node --experimental-sqlite --test tests/*.test.mjs",
     "deploy:check": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
-    "build:demo": "npm run build && node scripts/bundle-demo.mjs && node scripts/check-demo.mjs"
+    "build:demo": "npm run build && node scripts/bundle-demo.mjs && node scripts/check-demo.mjs",
+    "test:runtime": "node scripts/check-runtime.mjs"
   },
   "dependencies": {
     "viem": "^2.55.0"
