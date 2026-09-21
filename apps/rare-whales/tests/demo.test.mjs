@@ -26,3 +26,11 @@ test('demo has empty honest state and rejects all auth and financial writes with
 test('demo local root mode and unavailable assets fail explicitly',async()=>{
  assert.equal(await (await demoFetch(req('/app.js'),{...env,BASE_PATH:''})).text(),'/app.js');assert.equal((await demoFetch(req('/whalepools/app.js'),{})).status,503);
 });
+
+test('portraits only open the fixed artwork origin and local prototype serves the claim config',async()=>{
+ const {default:local}=await import('../src/worker.mjs');
+ const r=await local.fetch(req('/claims.json'),{...env,APP_ORIGIN:'https://arwyn.party'});assert.equal(r.status,200);assert.equal(await r.text(),'/claims.json');
+ for(const headers of [r.headers,(await demoFetch(req('/whalepools/'),env)).headers]){
+  const csp=headers.get('content-security-policy');assert.match(csp,/img-src 'self' https:\/\/gateway\.pinata\.cloud;/);assert.match(csp,/connect-src 'self' https:\/\/rpc\.mainnet\.chain\.robinhood\.com https:\/\/gateway\.pinata\.cloud;/);assert.ok(!csp.includes('*'));
+ }
+});

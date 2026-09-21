@@ -3,6 +3,7 @@ import {MAX_AGENTS,validateRoster} from '../src/dna.mjs';
 import {NEUTRAL_PROFILE} from '../src/dna.mjs';
 import {replayPool,replayAgent} from '../src/pool.mjs';
 import {initClaims} from './claims.mjs';
+import {createPortraitLoader} from './portraits.mjs';
 void initClaims();
 const $=s=>document.querySelector(s);
 const asset=p=>new URL(p.replace(/^\//,''),import.meta.url).href;
@@ -14,8 +15,10 @@ const stamp=t=>new Date(t).toISOString().slice(0,16).replace('T',' ');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const key=a=>`${a.collection}:${a.tokenId}`;
 const label=a=>`${COLLECTIONS[a.collection].name} #${a.tokenId}`;
-const art=a=>a.collection==='whalestreet'&&a.tokenId===1?asset('/art/whalestreet-1.avif'):a.collection==='rarewhales'&&a.tokenId===245?asset('/whale.avif'):a.collection==='rarewhales'&&[246,247,248].includes(a.tokenId)?asset(`/art/whale-${a.tokenId}.avif`):null;
-const avatar=a=>art(a)?`<img src="${art(a)}" alt="${esc(label(a))}">`:'<span class="generic-whale" role="img" aria-label="NFT artwork unavailable">?</span>';
+const portraits=createPortraitLoader({asset});
+const avatar=a=>`<img data-whale-art data-collection="${a.collection}" data-token="${a.tokenId}" src="${asset('/art/portrait-loading.svg')}" alt="Loading artwork for ${esc(label(a))}" decoding="async" referrerpolicy="no-referrer">`;
+const hydrateArt=container=>portraits.hydrate(container);
+for(const button of document.querySelectorAll('[data-retry-art]'))button.addEventListener('click',()=>portraits.retry(document));
 const example=[{collection:'rarewhales',tokenId:245,strategy:'trend'},{collection:'rarewhales',tokenId:246,strategy:'recovery'},{collection:'whalestreet',tokenId:1,strategy:'breakout'},{collection:'rarewhales',tokenId:248,strategy:'magnet'}];
 let roster=example,selected='rarewhales:245',scope='pool',practice,company,club,provider,busy=false,generation=0;
 try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=validateRoster(JSON.parse(saved));}catch{/* A corrupted local draft never affects registered companies. */}
@@ -48,6 +51,7 @@ async function refreshCompany(){
 function renderAgents(){
  if(!company)return;
  $('#agent-roster').innerHTML=company.agents.length?company.agents.map(a=>`<article class="agent-card agent-color-${a.profile.levels[0]} ${key(a)===selected?'is-selected':''}"><div class="agent-top"><span>${a.collection==='rarewhales'?'RARE WHALES':'WHALESTREET'} #${a.tokenId}</span><button type="button" data-remove="${key(a)}" aria-label="Remove ${esc(label(a))}">×</button></div><button class="agent-portrait" data-inspect="${key(a)}" aria-label="Select ${esc(label(a))} and view trading results" aria-pressed="${key(a)===selected}">${avatar(a)}<span class="inspect-label">${key(a)===selected?'SELECTED AGENT':'VIEW MY RESULTS ↗'}</span></button><div class="agent-info"><h4 class="agent-name">${STRATEGIES[a.strategy].name.toUpperCase()}</h4><div class="agent-sub"><span>${a.profile.name} · DNA ${a.profile.hash.slice(0,6)}</span><span>${money(a.startEquity)} budget</span></div><div class="agent-stats"><span>NERVE<strong>${a.profile.risk.toFixed(3)}%</strong></span><span>REACH<strong>${a.profile.targetMultiplier>1?'+':''}${((a.profile.targetMultiplier-1)*100).toFixed(0)}%</strong></span><span>CARGO<strong>${a.profile.allocation}%</strong></span></div><label>ASSIGN TACTIC<select data-tactic="${key(a)}" aria-label="Strategy for ${esc(label(a))}">${Object.entries(STRATEGIES).map(([id,t])=>`<option value="${id}" ${a.strategy===id?'selected':''}>${t.icon} ${t.name}</option>`).join('')}</select></label><p class="agent-result"><span>Net replay P/L</span><b class="${a.result.stats.pnl>=0?'positive':'negative'}">${a.result.stats.pnl>0?'+':''}${money(a.result.stats.pnl)}</b></p><div class="agent-mini-stats"><span><b>${a.result.stats.count}</b> trades</span><span><b>${a.result.stats.count?a.result.stats.winRate.toFixed(0)+'%':'—'}</b> won</span><span><b>${a.result.stats.maxDrawdown.toFixed(2)}%</b> drawdown</span></div></div></article>`).join(''):'<div class="empty-roster"><h3>YOUR COMPANY NEEDS A CREW.</h3><p>Add a whale above. An empty pool keeps its budget in paper cash.</p></div>';
+ hydrateArt($('#agent-roster'));
 }
 $('#agent-roster').addEventListener('click',event=>{
  const inspect=event.target.closest('[data-inspect]'),remove=event.target.closest('[data-remove]');
@@ -73,6 +77,7 @@ function renderInspector(){
  const a=selectedAgent();renderTactics(a);if(!a){$('#dna-details').innerHTML='<p>No active agents. Add an NFT to inspect its fixed DNA.</p>';return;}
  const p=a.profile,stat=(name,value,level,description)=>`<div class="dna-stat"><div><span>${name}</span><strong>${value}</strong></div><div class="stat-meter" aria-hidden="true">${Array.from({length:5},(_,i)=>`<i class="${i<level+2?'filled':''}"></i>`).join('')}</div><p>${description}</p></div>`;
  $('#dna-details').innerHTML=`<div class="dna-character">${avatar(a)}<div><h3>${p.name.toUpperCase()}</h3><p>${esc(label(a))}<br>${money(a.startEquity)} starting share</p></div></div>${stat('NERVE',p.risk.toFixed(3)+'%',p.levels[0],'Risk budget per trade: '+money(a.startEquity*p.risk/100)+' initially.')}${stat('REACH',`${Math.round((p.targetMultiplier-1)*100)>0?'+':''}${Math.round((p.targetMultiplier-1)*100)}%`,p.levels[1],'Distance from signal entry to target. Stops stay fixed.')}${stat('CARGO',p.allocation+'%',p.levels[2],'Maximum portion of this agent’s budget in a position.')}<p class="dna-hash">FIXED BUILD ${p.build} · SHA-256 ${p.hash.slice(0,12)}…<br>COLLECTION + TOKEN ID · SAME NFT, SAME STATS</p><p class="dna-outcome">This replay: <b>${money(a.result.stats.endEquity)}</b> with DNA / <b>${money(a.baseline.stats.endEquity)}</b> with default stats. ${a.result.stats.count} completed ${a.result.stats.count===1?'trade':'trades'}. Small samples are not a prediction.</p>`;
+ hydrateArt($('#dna-details'));
 }
 function drawGraph(run,baseline,initial){
  const hold=practice.hold.map(p=>({...p,equity:p.equity*initial/1000}));
@@ -99,6 +104,7 @@ function renderScoreboard(){
  const run=scope==='pool'?company:a.result,baseline=scope==='pool'?company.baseline:a.baseline,initial=scope==='pool'?1000:a.startEquity;
  $('#chart-title').textContent=scope==='pool'?'YOUR COMPANY, AT A GLANCE.':label(a).toUpperCase();
  $('#scope-banner').innerHTML=scope==='pool'?`<span class="scope-icon" aria-hidden="true">♛</span><div><b>WHOLE COMPANY</b><span>${company.agents.length} agents · $1,000 combined starting budget</span></div>`:`${avatar(a)}<div><b>${esc(label(a))}</b><span>${esc(a.profile.name)} · ${money(a.startEquity)} starting share</span></div><a href="#roster">CHANGE WHALE ↑</a>`;
+ hydrateArt($('#scope-banner'));
  renderTradingStats(run);
  $('#chart-description').textContent=scope==='pool'?`${company.agents.length} agents share $1,000. Every curve is a reconstruction on the same old sample.`:`${STRATEGIES[a.strategy].name}. Same candles and starting share; only the DNA modifiers differ.`;
  $('#baseline-label').textContent=scope==='pool'?'Same crew, default stats':'Same agent, default stats';
@@ -112,7 +118,7 @@ $('#chart-agent').addEventListener('change',e=>{scope=e.target.value==='pool'?'p
 for(const button of document.querySelectorAll('[data-view]'))button.addEventListener('click',()=>{scope=button.dataset.view;renderScoreboard();});
 $('#add-agent').addEventListener('click',()=>{$('#add-form').hidden=!$('#add-form').hidden;if(!$('#add-form').hidden)$('#add-token').focus();});
 $('#cancel-add').addEventListener('click',()=>{$('#add-form').hidden=true;});
-$('#add-form').addEventListener('submit',e=>{e.preventDefault();try{roster=validateRoster([...roster,{collection:$('#add-collection').value,tokenId:Number($('#add-token').value),strategy:'trend'}]);selected=key(roster.at(-1));scope='agent';$('#roster-message').textContent=`${label(roster.at(-1))} added to the sandbox. Ownership is checked when registering.`;$('#add-form').hidden=true;$('#add-token').value='';rosterChanged();}catch(error){$('#roster-message').textContent=error.message;}});
+$('#add-form').addEventListener('submit',e=>{e.preventDefault();try{roster=validateRoster([...roster,{collection:$('#add-collection').value,tokenId:Number($('#add-token').value),strategy:'trend'}]);selected=key(roster.at(-1));scope='agent';$('#roster-message').textContent=`${label(roster.at(-1))} added to the sandbox. This does not prove ownership.`;$('#add-form').hidden=true;$('#add-token').value='';rosterChanged();}catch(error){$('#roster-message').textContent=error.message;}});
 $('#download').addEventListener('click',()=>{
  if(!company)return;const fields=['collection','tokenId','strategy','entryTime','exitTime','entry','exit','qty','pnl','reason','exitTimePrecision'];
  const quote=x=>'"'+String(x??'').replaceAll('"','""')+'"';
@@ -162,6 +168,7 @@ $('#load-saved').addEventListener('click',()=>{if(!club?.me?.seat)return;roster=
 $('#remove').addEventListener('click',async()=>{try{await api('/api/seat',undefined,'DELETE');$('#seat-form').reset();await refreshClub();$('#seat-message').textContent='Company and roster withdrawn. You can register again while registration is open.';}catch(e){$('#seat-message').textContent=e.message;}});
 async function loadCrew(){try{const data=await api('/api/crew');$('#crew-count').textContent=`${data.seats.length} ${data.seats.length===1?'COMPANY':'COMPANIES'}${data.seats.length===100?' (FIRST 100)':''}`;$('#crew-state').textContent=`SEASON ${data.status.toUpperCase()} · NO LIVE STANDINGS`;
  $('#crew-list').innerHTML=data.seats.length?data.seats.map(pool=>`<article class="crew-member panel"><div class="panel-title purple">${esc(pool.nickname)}<span>${pool.agents.length} AGENTS</span></div><div class="company-meta">One owner wallet · ${esc(pool.basis)} access<br>$1,000 shared starting budget · ownership checked on save<br>Season performance has not been recorded.</div><div class="crew-avatars">${pool.agents.map(a=>`<div class="crew-avatar">${avatar(a)}<span>#${a.tokenId} · ${esc(a.profile.name)}<br>${esc(STRATEGIES[a.strategy].kind)}</span></div>`).join('')}</div></article>`).join(''):'<div class="empty-state"><span>≈</span><h2>THE OCEAN IS OPEN.<br>THE COMPANIES ARE COMING.</h2><p>No pools are registered yet. The founding season is still in draft.<br>You can build and replay an example whale company right now.</p><a href="#practice" class="pixel-button yellow">BUILD A SANDBOX POOL →</a></div>';
+ hydrateArt($('#crew-list'));
  }catch(e){message(e.message);}}
 
 function renderTradingStats(run){
@@ -174,7 +181,7 @@ function renderTradingStats(run){
  $('#trade-stats').innerHTML=rows.map(([name,value,note])=>`<div><span>${name}</span><b>${value}</b><small>${note}</small></div>`).join('');
 }
 function renderCursor(){
- if(!chartState)return;const {points,x,y,H,top,bottom}=chartState;
+ if(!chartState||!$('#chart-cursor'))return;const {points,x,y,H,top,bottom}=chartState;
  const point=points[Math.round(Number($('#replay-cursor').value)/100*(points.length-1))];
  $('#cursor-value').textContent=`${stamp(point.t)} UTC · ${money(point.equity)} paper equity`;
  $('#replay-cursor').setAttribute('aria-valuetext',$('#cursor-value').textContent);
@@ -189,6 +196,7 @@ function renderOutfit(){
  if(a)$('#outfit-agent').value=selected;
  $('#outfit-stage').className='outfit-stage outfit-'+equipment;
  $('#outfit-stage').innerHTML=a?`${avatar(a)}<span class="outfit-accessory" aria-hidden="true"><img src="${asset('/art/'+equipmentArt[equipment]+'.svg')}" alt=""></span><span class="outfit-name">${esc(label(a))}</span>`:'<p>Add a whale in Pool HQ to try an outfit.</p>';
+ hydrateArt($('#outfit-stage'));
  $('#outfit-title').textContent=equipmentCopy[equipment][0];$('#outfit-description').textContent=equipmentCopy[equipment][1];
  for(const b of document.querySelectorAll('[data-equipment]'))b.setAttribute('aria-pressed',String(b.dataset.equipment===equipment));
 }

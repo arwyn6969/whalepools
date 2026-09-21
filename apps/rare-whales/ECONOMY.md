@@ -2,6 +2,35 @@
 
 RW-006 supersedes the earlier free-testnet recommendation below: the owner requested paid non-staking claims and delegated the settings. The prepared version uses 100 WWAX per eligible NFT per 30-day global period for twelve periods, a 0.0001 ETH project fee per NFT, and a full fixed reserve. The deployment wallet is the permanent fee recipient. Claims remain closed until an actual deployment is verified. See [CLAIMS.md](CLAIMS.md) for exact behavior, fee economics and launch steps. Earlier exploration is retained below for context.
 
+# Current integration review · RW-008
+
+**The token is prepared, but it is not connected to gameplay or leaderboard calculations.** The static website is live; mainnet deployment and paid claims are still pending. Wallet token balances do not change DNA, tactics, agent budgets, access or replay scores. The fit check has no purchase, ownership, persistence or spending ledger. There is no prospective season recorder or live competitive leaderboard. The frozen claim reserve is entirely allocated to the holder programme, so there is no extra gameplay reward pot.
+
+| Component | Working now | Next concrete step |
+| --- | --- | --- |
+| NFT identity | Mixed Rare Whales / WhaleStreet sandbox, deterministic DNA, metadata portraits | Verified company membership, approved founder and promo IDs |
+| Practice | Same historical sample, costs, per-agent and company statistics | A separately specified future paper season with locked rosters and complete records |
+| WWAX | Fixed-supply contracts and guarded claim/deployment interfaces prepared; payments closed | Verify an actual deployment before enabling claims |
+| Equipment | Free visual fit check | Ownership ledger and one useful item before selling equipment |
+| Leaderboards | Historical company scoreboard only | Compare future paper records with equal budgets, disclosed costs, drawdown and data coverage |
+
+**Product recommendation:** connect WWAX to equipment and company expression. Keep competitive trading scores independent of token spending. Build a usable first item before asking people to pay to collect utility tokens. This recommendation does not cancel the prepared paid-claim design or change its constants. The next recommended development task is an equipment ledger and free/test transaction journey; public paid activation remains a separate owner decision.
+
+- Surfboard: per-whale convenience for preparing/batching eligible claims, with a wallet confirmation. The current distributor requires the NFT owner to be the sender; a third-party keeper cannot auto-claim. Do not sell autonomous farming without a separately reviewed authorization and gas design.
+- Holy Brick of Kek: an expressive trophy and saved roster preset. Basic fair competition tools remain available to everyone. No return multiplier, hidden information advantage or edits after a season locks.
+- Crown and banners: cosmetic equipment associated with `(chain, collection, tokenId)`. Proposed first rule: equipment stays with the NFT on transfer, while the current verified owner controls its look; show that rule before purchase. The former owner's account must lose editing rights.
+- A separate collection/participation display can celebrate gear and season stamps. Do not mix spending with trading rank, or issue paid/redeemable rewards based on this replay: users can inspect and optimise the historical sample in advance.
+
+A real equipment purchase needs a published fixed WWAX price and destination, fresh ownership check, bounded allowance, atomic payment plus item issuance, duplicate-purchase protection, verified receipt and a recoverable equipment ledger. UI clicks or browser storage are not proof of token payment or ownership. Decide whether spending is burned or paid to a game treasury before implementation; no new destination or burn mechanism is currently approved. The existing token has no general holder-burn function, so a burn sink would require a separate, explicit design. Do not redirect reserved claims to fund prizes. Any future rewards need a genuinely funded, separately disclosed budget.
+
+Current portrait delivery: five bundled examples remain fast; other IDs read `tokenURI` from the correct Robinhood collection and load its IPFS `image` through a fixed HTTPS gateway. At most three metadata resolutions run at once; failures are retryable. No metadata HTML is injected and no arbitrary URL is fetched. Gateway availability is an external dependency. Seeing a portrait proves neither wallet ownership nor claim entitlement. NFT metadata traits are artwork metadata; trading DNA remains the declared identity hash.
+
+Implementation follows [IPFS gateway addressing](https://docs.ipfs.tech/how-to/address-ipfs-on-web/). The design recommendations above are product judgments, not profitability forecasts.
+
+# Earlier design exploration · superseded where it conflicts with the decisions above
+
+The remaining sections retain the earlier discussion for context. Their undecided settings and testnet-first recommendation are not the current launch configuration; [CLAIMS.md](CLAIMS.md) is authoritative for the prepared holder programme.
+
 # Whale Wax: design review, 21 September 2026
 
 Status: proposals, not launched features or financial promises. The playable demo has no token, staking, reward balance, deposits, fees, live orders or public registration. This document makes no change to replay rules or the frozen Vector Desk studies.
@@ -27,7 +56,7 @@ The demo's fit check is only an ephemeral visual preview. It neither writes an e
 
 ## Mixed collections and ownership
 
-Both Rare Whales and WhaleStreet already count towards the combined 10-NFT route and can share a 12-agent roster. One wallet, one company, one $1,000 simulated starting budget. Promo 1/1 and founder access remain alternative routes, subject to the configured lists. Hash-derived DNA includes collection address, so equal token numbers from different collections are different agents. No collection-specific advantage is promised. Rare Whales #245–248 and WhaleStreet #1 have bundled artwork; other IDs explicitly show missing artwork.
+Both Rare Whales and WhaleStreet already count towards the combined 10-NFT route and can share a 12-agent roster. One wallet, one company, one $1,000 simulated starting budget. Promo 1/1 and founder access remain alternative routes, subject to the configured lists. Hash-derived DNA includes collection address, so equal token numbers from different collections are different agents. No collection-specific advantage is promised. Earlier preview limitation, fixed in RW-008: only Rare Whales #245–248 and WhaleStreet #1 had artwork. Other IDs now resolve NFT metadata with explicit retryable failure states.
 
 Critical integration issue: ERC-721 ownerOf becomes the staking contract after deposit. The existing membership gate would reject the depositor. Add verified staking-beneficiary lookup before true staking, and prevent the same token being assigned twice. Define transfer, withdrawal, season snapshot and equipment-transfer rules. Multiple wallets are not unique humans. Keep initial membership proofs free.
 

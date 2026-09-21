@@ -1,7 +1,7 @@
 import season from '../season.json' with {type:'json'};
 import { createApi } from './api.mjs';
 const api=createApi({season});
-const paths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif','/art/wax-tub.svg','/art/surfboard.svg','/art/holy-brick.svg','/art/captain-crown.svg']);
+const paths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/claims.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif','/art/wax-tub.svg','/art/surfboard.svg','/art/holy-brick.svg','/art/captain-crown.svg','/art/portrait-loading.svg','/art/portrait-missing.svg']);
 export default {
   async fetch(request,env) {
     const response=await api(request,env);
@@ -15,7 +15,7 @@ export default {
   }
 };
 export const securityHeaders={
-  'content-security-policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  'content-security-policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://gateway.pinata.cloud; connect-src 'self' https://rpc.mainnet.chain.robinhood.com https://gateway.pinata.cloud; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
   'x-content-type-options':'nosniff','referrer-policy':'no-referrer','permissions-policy':'camera=(), microphone=(), geolocation=()',
   'cache-control':'no-store'
 };
