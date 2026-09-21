@@ -18,7 +18,8 @@
     "contracts:test": "node scripts/test-contracts.mjs",
     "launch:prepare": "npm run contracts:build && node scripts/prepare-launch.mjs",
     "launch:serve": "node scripts/serve-launch.mjs",
-    "launch:verify": "node scripts/verify-launch.mjs"
+    "launch:verify": "node scripts/verify-launch.mjs",
+    "contracts:test:fork": "node scripts/test-fork.mjs"
   },
   "dependencies": {
     "viem": "^2.55.0"

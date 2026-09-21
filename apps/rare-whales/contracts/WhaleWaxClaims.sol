@@ -41,6 +41,7 @@ contract WhaleWaxClaims is ReentrancyGuard {
     error IneligibleNFT();
     error NotNFTOwner();
     error AlreadyClaimed();
+    error PeriodChanged();
     error FeeWithdrawalFailed();
     event Claimed(address indexed owner, address indexed collection, uint256 indexed tokenId, uint256 period);
     event FeesWithdrawn(address indexed treasury, uint256 amount);
@@ -64,11 +65,12 @@ contract WhaleWaxClaims is ReentrancyGuard {
         return (block.timestamp - startsAt) / PERIOD;
     }
 
-    function claim(address[] calldata collections, uint256[] calldata ids) external payable nonReentrant {
+    function claim(address[] calldata collections, uint256[] calldata ids, uint256 expectedPeriod) external payable nonReentrant {
         uint256 length = ids.length;
         if (length == 0 || length > MAX_BATCH || length != collections.length) revert InvalidBatch();
         if (msg.value != FEE * length) revert IncorrectFee();
         uint256 period = currentPeriod();
+        if (period != expectedPeriod) revert PeriodChanged();
         uint256 mask = 1 << period;
         for (uint256 i; i < length; ++i) {
             address collection = collections[i];

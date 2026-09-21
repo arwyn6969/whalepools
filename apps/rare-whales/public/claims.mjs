@@ -1,5 +1,5 @@
 import {createPublicClient,createWalletClient,http,custom,formatEther,formatUnits,getAddress} from 'viem';
-import {claimChain,claimAbi,tokenAbi,parseClaimIDs,verifyDeployment,quoteClaim} from '../src/claims.mjs';
+import {claimChain,claimAbi,tokenAbi,parseClaimIDs,verifyDeployment,verifyClaimReceipt,quoteClaim} from '../src/claims.mjs';
 const $=s=>document.querySelector(s),say=s=>$('#claim-message').textContent=s;
 const displayError=e=>(e?.shortMessage||e?.message||'Request failed. Try again.').slice(0,280);
 export async function initClaims(options={}){
@@ -35,7 +35,7 @@ export async function initClaims(options={}){
   if(busy)return;reset();setBusy(true);const version=revision;
   try{
    await walletState();const nfts=parseClaimIDs($('#claim-rare').value,$('#claim-street').value);const q=await quoteClaim(client,deployment,account,nfts);
-   const args=[q.collections,q.ids];await client.simulateContract({account,address:deployment.address,abi:claimAbi,functionName:'claim',args,value:q.value});
+   const args=[q.collections,q.ids,q.period];await client.simulateContract({account,address:deployment.address,abi:claimAbi,functionName:'claim',args,value:q.value});
    const gas=await client.estimateContractGas({account,address:deployment.address,abi:claimAbi,functionName:'claim',args,value:q.value});
    const gasPrice=await client.getGasPrice();await walletState();if(version!==revision)return;
    review={...q,nfts,account};$('#claim-review').hidden=false;
@@ -48,13 +48,14 @@ export async function initClaims(options={}){
   try{
    await walletState();const fresh=await quoteClaim(client,deployment,account,saved.nfts);
    if(fresh.period!==saved.period)throw Error('A new period started. Check your allowance again.');
-   const {request}=await client.simulateContract({account,address:deployment.address,abi:claimAbi,functionName:'claim',args:[fresh.collections,fresh.ids],value:fresh.value});
+   const {request}=await client.simulateContract({account,address:deployment.address,abi:claimAbi,functionName:'claim',args:[fresh.collections,fresh.ids,fresh.period],value:fresh.value});
    await walletState();if(version!==revision)throw Error('Selection changed. Review again.');
    const hash=await wallet.writeContract(request);reset();
    const link=$('#claim-transaction');link.href=claimChain.blockExplorers.default.url+'/tx/'+hash;link.textContent='View submitted transaction ↗';link.hidden=false;
    say('Transaction submitted. Waiting for the chain…');
-   const receipt=await client.waitForTransactionReceipt({hash,confirmations:2,timeout:180000});
-   if(receipt.status!=='success')throw Error('Transaction reverted. No claim reward or project fee was taken; network gas may have been spent.');
+   const receipt=await client.waitForTransactionReceipt({hash,confirmations:2,timeout:180000,onReplaced:({transactionReceipt})=>{link.href=claimChain.blockExplorers.default.url+'/tx/'+transactionReceipt.transactionHash;link.textContent='View replacement transaction ↗';}});
+   if(receipt.transactionHash)link.href=claimChain.blockExplorers.default.url+'/tx/'+receipt.transactionHash;
+   verifyClaimReceipt(receipt,deployment,saved);
    say(`Confirmed: ${formatUnits(saved.reward,18)} WWAX delivered to ${saved.account}.`);
   }catch(e){reset();say(displayError(e)+' If a transaction was submitted, check its explorer link before retrying.');}finally{setBusy(false);}
  };

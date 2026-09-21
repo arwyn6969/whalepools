@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {keccak256} from 'viem';
-import {parseClaimIDs,periodAt,verifyDeployment,quoteClaim,CLAIM_RULES} from '../src/claims.mjs';
+import {parseClaimIDs,periodAt,verifyDeployment,verifyClaimReceipt,quoteClaim,CLAIM_RULES} from '../src/claims.mjs';
+import {claimLogs} from './claim-fixtures.mjs';
 import {COLLECTIONS} from '../src/config.mjs';
 const owner='0x1111111111111111111111111111111111111111',other='0x2222222222222222222222222222222222222222',address='0x3333333333333333333333333333333333333333';
 test('claim input strictly accepts mixed NFT IDs within the frozen mint bounds',()=>{
@@ -29,7 +30,24 @@ test('deployment gate rejects absence, wrong code, chain, pending confirmations 
  await assert.rejects(()=>verifyDeployment(client,{...manifest,chainId:1}),/Wrong chain/);
  await assert.rejects(()=>verifyDeployment({...client,getChainId:async()=>1},manifest),/Wrong chain/);
  await assert.rejects(()=>verifyDeployment(client,{...manifest,creationCodeHash:keccak256('0xab')}),/reviewed build/);
- await assert.rejects(()=>verifyDeployment({...client,getBlock:async()=>({number:41n})},manifest),/confirmations/);
+ await assert.rejects(()=>verifyDeployment({...client,getBlock:async()=>({number:40n})},manifest),/confirmations/);
+ assert.equal((await verifyDeployment({...client,getBlock:async()=>({number:41n})},manifest)).address,address);
+ await assert.rejects(()=>verifyDeployment({...client,getCode:async()=>'0x'},manifest),/not available/);
  await assert.rejects(()=>verifyDeployment({...client,getTransaction:async()=>({from:owner,to:other,input:'0x1234'})},manifest),/reviewed build/);
  fields.FEE=0n;await assert.rejects(()=>verifyDeployment(client,manifest),/settings/);
+});
+test('success requires the reviewed NFT events and actual WWAX transfer, not merely a successful receipt',()=>{
+ const nfts=parseClaimIDs('1','1'),claim={nfts,account:owner,period:0n,reward:2n*CLAIM_RULES.reward},deployment={address,token:other};
+ const logs=claimLogs(address,other,owner,nfts,0n,claim.reward),hash='0x'+'a'.repeat(64);
+ assert.equal(verifyClaimReceipt({status:'success',logs,transactionHash:hash},deployment,claim),hash);
+ for(const receipt of [
+  {status:'reverted',logs},
+  {status:'success',logs:[]}, // Successful wallet cancellation is not a claim.
+  {status:'success',logs:logs.slice(0,2)},
+  {status:'success',logs:[...logs,logs[0]]},
+  {status:'success',logs:claimLogs(address,other,other,nfts,0n,claim.reward)},
+  {status:'success',logs:claimLogs(address,other,owner,nfts,1n,claim.reward)},
+  {status:'success',logs:claimLogs(address,other,owner,nfts,0n,claim.reward-1n)},
+  {status:'success',logs:claimLogs(owner,other,owner,nfts,0n,claim.reward)}
+ ])assert.throws(()=>verifyClaimReceipt(receipt,deployment,claim));
 });

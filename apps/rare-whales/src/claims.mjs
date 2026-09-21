@@ -1,4 +1,4 @@
-import {defineChain,parseAbi,keccak256,getAddress} from 'viem';
+import {defineChain,parseAbi,keccak256,getAddress,decodeEventLog} from 'viem';
 import {COLLECTIONS,CHAIN_ID,RPC_URL} from './config.mjs';
 export const claimChain=defineChain({id:CHAIN_ID,name:'Robinhood Chain',nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18},rpcUrls:{default:{http:[RPC_URL]}},blockExplorers:{default:{name:'Robinhood Explorer',url:'https://robinhoodchain.blockscout.com'}}});
 export const CLAIM_RULES=Object.freeze({reward:100n*10n**18n,fee:10n**14n,period:30n*86400n,periods:12n,supply:4486800n*10n**18n,maxBatch:20,bounds:{rarewhales:420,whalestreet:3319}});
@@ -10,11 +10,12 @@ export const claimAbi=parseAbi([
  'function MAX_BATCH() view returns(uint256)','function INITIAL_SUPPLY() view returns(uint256)',
  'function RARE_WHALES() view returns(address)','function WHALESTREET() view returns(address)',
  'function claimedPeriods(address,uint256) view returns(uint256)',
- 'function claim(address[] collections,uint256[] ids) payable',
+ 'function claim(address[] collections,uint256[] ids,uint256 expectedPeriod) payable',
+ 'event Claimed(address indexed owner,address indexed collection,uint256 indexed tokenId,uint256 period)',
  'function withdrawFees()','function burnExpiredReserve()'
 ]);
 export const nftAbi=parseAbi(['function ownerOf(uint256) view returns(address)']);
-export const tokenAbi=parseAbi(['function balanceOf(address) view returns(uint256)','function totalSupply() view returns(uint256)']);
+export const tokenAbi=parseAbi(['function balanceOf(address) view returns(uint256)','function totalSupply() view returns(uint256)','event Transfer(address indexed from,address indexed to,uint256 value)']);
 export function parseClaimIDs(rare,street){
  const nfts=[];
  for(const [key,input]of [['rarewhales',rare],['whalestreet',street]]){
@@ -35,13 +36,33 @@ export async function verifyDeployment(client,manifest){
  const receipt=await client.getTransactionReceipt({hash:d.transactionHash});
  const tx=await client.getTransaction({hash:d.transactionHash});
  if(receipt.status!=='success'||!receipt.contractAddress||receipt.contractAddress.toLowerCase()!==d.address.toLowerCase()||tx.to!==null||keccak256(tx.input)!==manifest.creationCodeHash)throw Error('Deployment does not match this reviewed build.');
- const head=await client.getBlock();if(head.number<receipt.blockNumber+2n)throw Error('Waiting for deployment confirmations.');
- if(!await client.getCode({address:d.address}))throw Error('Contract is not available.');
+ const head=await client.getBlock();if(head.number-receipt.blockNumber+1n<2n)throw Error('Waiting for deployment confirmations.');
+ const code=await client.getCode({address:d.address});if(!code||code==='0x')throw Error('Contract is not available.');
  const names=['token','treasury','startsAt','endsAt','REWARD','FEE','PERIOD','PERIODS','MAX_BATCH','INITIAL_SUPPLY','RARE_WHALES','WHALESTREET'];
  const values=await Promise.all(names.map(functionName=>client.readContract({address:d.address,abi:claimAbi,functionName,blockNumber:head.number})));
  const fields=Object.fromEntries(names.map((n,i)=>[n,values[i]]));
  if(getAddress(fields.treasury)!==getAddress(tx.from)||fields.REWARD!==CLAIM_RULES.reward||fields.FEE!==CLAIM_RULES.fee||fields.PERIOD!==CLAIM_RULES.period||fields.PERIODS!==CLAIM_RULES.periods||fields.MAX_BATCH!==20n||fields.INITIAL_SUPPLY!==CLAIM_RULES.supply||fields.endsAt-fields.startsAt!==CLAIM_RULES.period*CLAIM_RULES.periods||fields.RARE_WHALES.toLowerCase()!==COLLECTIONS.rarewhales.address||fields.WHALESTREET.toLowerCase()!==COLLECTIONS.whalestreet.address)throw Error('Deployed claim settings do not match the published rules.');
  return {...fields,address:getAddress(d.address),transactionHash:d.transactionHash};
+}
+export function verifyClaimReceipt(receipt,deployment,claim){
+ if(receipt.status!=='success')throw Error('Transaction reverted. No claim reward or project fee was taken; network gas may have been spent.');
+ const expected=new Set(claim.nfts.map(n=>n.collection.toLowerCase()+':'+n.tokenId));
+ let reward=0n,claims=0;
+ for(const log of receipt.logs||[]){
+  const address=log.address?.toLowerCase();
+  if(address===deployment.address.toLowerCase()){
+   let event;try{event=decodeEventLog({abi:claimAbi,data:log.data,topics:log.topics});}catch{continue;}
+   if(event.eventName!=='Claimed')continue;
+   const a=event.args,key=a.collection.toLowerCase()+':'+a.tokenId;
+   if(a.owner.toLowerCase()!==claim.account.toLowerCase()||a.period!==claim.period||!expected.delete(key))throw Error('Receipt does not match the reviewed claim.');
+   claims++;
+  }else if(address===deployment.token.toLowerCase()){
+   let event;try{event=decodeEventLog({abi:tokenAbi,data:log.data,topics:log.topics});}catch{continue;}
+   const a=event.args;if(event.eventName==='Transfer'&&a.from.toLowerCase()===deployment.address.toLowerCase()&&a.to.toLowerCase()===claim.account.toLowerCase())reward+=a.value;
+  }
+ }
+ if(expected.size||claims!==claim.nfts.length||reward!==claim.reward)throw Error('No matching WWAX payout was confirmed. The transaction may have been cancelled or replaced. Check the explorer.');
+ return receipt.transactionHash;
 }
 export async function quoteClaim(client,deployment,account,nfts){
  const block=await client.getBlock(),period=periodAt(block.timestamp,deployment.startsAt,deployment.endsAt),mask=1n<<period;

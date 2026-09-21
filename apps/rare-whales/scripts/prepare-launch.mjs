@@ -10,5 +10,5 @@ await writeFile(new URL('launch.json',out),JSON.stringify(data,null,2)+'\n');
 for(const file of ['index.html','style.css'])await copyFile(new URL('operator/'+file,app),new URL(file,out));
 await copyFile(new URL('public/art/wax-tub.svg',app),new URL('wax-tub.svg',out));
 await copyFile(new URL('build/contracts/standard-input.json',app),new URL('standard-input.json',out));
-await build({entryPoints:[fileURLToPath(new URL('operator/launch.mjs',app))],outfile:fileURLToPath(new URL('launch.js',out)),bundle:true,format:'esm',target:'es2022',minify:true});
+await build({entryPoints:[fileURLToPath(new URL('operator/main.mjs',app))],outfile:fileURLToPath(new URL('launch.js',out)),bundle:true,format:'esm',target:'es2022',minify:true});
 console.log('Deployment package prepared: build/launch/. No transaction sent. Run npm run launch:serve and open http://127.0.0.1:48374/.');
