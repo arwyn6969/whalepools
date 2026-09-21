@@ -1,4 +1,4 @@
-import {CHAIN_ID,COLLECTIONS} from './config.mjs';
+import {CHAIN_ID,COLLECTIONS,STRATEGIES} from './config.mjs';
 
 export const DNA_VERSION='whale-dna-v1';
 export const MAX_AGENTS=12;
@@ -17,7 +17,7 @@ export function validateRoster(agents){
  if(!Array.isArray(agents)||agents.length>MAX_AGENTS)throw Error(`A pool can contain up to ${MAX_AGENTS} agents.`);
  const keys=new Set();
  return agents.map(a=>{
-  if(!a||!Object.hasOwn(COLLECTIONS,a.collection)||!Number.isSafeInteger(a.tokenId)||a.tokenId<0||a.tokenId>1000000||!['trend','recovery'].includes(a.strategy))throw Error('Each agent needs a valid collection, token number and strategy.');
+  if(!a||!Object.hasOwn(COLLECTIONS,a.collection)||!Number.isSafeInteger(a.tokenId)||a.tokenId<0||a.tokenId>1000000||!Object.hasOwn(STRATEGIES,a.strategy))throw Error('Each agent needs a valid collection, token number and strategy.');
   const key=`${a.collection}:${a.tokenId}`;if(keys.has(key))throw Error('A whale can only appear once in a pool.');keys.add(key);
   return {collection:a.collection,tokenId:a.tokenId,strategy:a.strategy};
  });

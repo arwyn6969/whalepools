@@ -1,6 +1,7 @@
 import {CHAIN_ID,STRATEGIES,COLLECTIONS} from '../src/config.mjs';
 import {MAX_AGENTS,validateRoster} from '../src/dna.mjs';
-import {replayPool} from '../src/pool.mjs';
+import {NEUTRAL_PROFILE} from '../src/dna.mjs';
+import {replayPool,replayAgent} from '../src/pool.mjs';
 const $=s=>document.querySelector(s);
 const asset=p=>new URL(p.replace(/^\//,''),import.meta.url).href;
 let chartState,equipment='surfboard';
@@ -11,9 +12,9 @@ const stamp=t=>new Date(t).toISOString().slice(0,16).replace('T',' ');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const key=a=>`${a.collection}:${a.tokenId}`;
 const label=a=>`${COLLECTIONS[a.collection].name} #${a.tokenId}`;
-const art=a=>a.collection==='rarewhales'&&a.tokenId===245?asset('/whale.avif'):a.collection==='rarewhales'&&[246,247,248].includes(a.tokenId)?asset(`/art/whale-${a.tokenId}.avif`):null;
+const art=a=>a.collection==='whalestreet'&&a.tokenId===1?asset('/art/whalestreet-1.avif'):a.collection==='rarewhales'&&a.tokenId===245?asset('/whale.avif'):a.collection==='rarewhales'&&[246,247,248].includes(a.tokenId)?asset(`/art/whale-${a.tokenId}.avif`):null;
 const avatar=a=>art(a)?`<img src="${art(a)}" alt="${esc(label(a))}">`:'<span class="generic-whale" role="img" aria-label="NFT artwork unavailable">?</span>';
-const example=[245,246,247,248].map(tokenId=>({collection:'rarewhales',tokenId,strategy:'trend'}));
+const example=[{collection:'rarewhales',tokenId:245,strategy:'trend'},{collection:'rarewhales',tokenId:246,strategy:'recovery'},{collection:'whalestreet',tokenId:1,strategy:'breakout'},{collection:'rarewhales',tokenId:248,strategy:'magnet'}];
 let roster=example,selected='rarewhales:245',scope='pool',practice,company,club,provider,busy=false,generation=0;
 try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=validateRoster(JSON.parse(saved));}catch{/* A corrupted local draft never affects registered companies. */}
 const watchedProviders=new WeakSet();
@@ -31,7 +32,7 @@ function route(){
  if(hash==='roster')$('#roster').scrollIntoView({block:'start'});
 }
 window.addEventListener('hashchange',route);
-function rosterChanged(){try{localStorage.setItem('whale-pools-sandbox-v1',JSON.stringify(roster));}catch{/* Practice still works without local persistence. */}updateRegistrationRoster();refreshCompany();}
+function rosterChanged(){try{localStorage.setItem('whale-pools-sandbox-v1',JSON.stringify(roster));}catch{/* Practice still works without local persistence. */}updateRegistrationRoster();return refreshCompany();}
 async function refreshCompany(){
  if(!practice)return;
  const epoch=++generation;$('#download').disabled=true;
@@ -44,7 +45,7 @@ async function refreshCompany(){
 }
 function renderAgents(){
  if(!company)return;
- $('#agent-roster').innerHTML=company.agents.length?company.agents.map(a=>`<article class="agent-card agent-color-${a.profile.levels[0]} ${key(a)===selected?'is-selected':''}"><div class="agent-top"><span>${a.collection==='rarewhales'?'RARE WHALES':'WHALESTREET'} #${a.tokenId}</span><button type="button" data-remove="${key(a)}" aria-label="Remove ${esc(label(a))}">×</button></div><button class="agent-portrait" data-inspect="${key(a)}" aria-label="Select ${esc(label(a))} and view trading results" aria-pressed="${key(a)===selected}">${avatar(a)}<span class="inspect-label">${key(a)===selected?'SELECTED AGENT':'VIEW MY RESULTS ↗'}</span></button><div class="agent-info"><h4 class="agent-name">${a.profile.name.toUpperCase()}</h4><div class="agent-sub"><span>DNA ${a.profile.hash.slice(0,6)}</span><span>${money(a.startEquity)} budget</span></div><div class="agent-stats"><span>NERVE<strong>${a.profile.risk.toFixed(3)}%</strong></span><span>REACH<strong>${a.profile.targetMultiplier>1?'+':''}${((a.profile.targetMultiplier-1)*100).toFixed(0)}%</strong></span><span>CARGO<strong>${a.profile.allocation}%</strong></span></div><label>ASSIGN TACTIC<select data-tactic="${key(a)}" aria-label="Strategy for ${esc(label(a))}"><option value="trend" ${a.strategy==='trend'?'selected':''}>↗ Ride the current</option><option value="recovery" ${a.strategy==='recovery'?'selected':''}>↶ Watch the deep</option></select></label><p class="agent-result"><span>Net replay P/L</span><b class="${a.result.stats.pnl>=0?'positive':'negative'}">${a.result.stats.pnl>0?'+':''}${money(a.result.stats.pnl)}</b></p><div class="agent-mini-stats"><span><b>${a.result.stats.count}</b> trades</span><span><b>${a.result.stats.count?a.result.stats.winRate.toFixed(0)+'%':'—'}</b> won</span><span><b>${a.result.stats.maxDrawdown.toFixed(2)}%</b> drawdown</span></div></div></article>`).join(''):'<div class="empty-roster"><h3>YOUR COMPANY NEEDS A CREW.</h3><p>Add a whale above. An empty pool keeps its budget in paper cash.</p></div>';
+ $('#agent-roster').innerHTML=company.agents.length?company.agents.map(a=>`<article class="agent-card agent-color-${a.profile.levels[0]} ${key(a)===selected?'is-selected':''}"><div class="agent-top"><span>${a.collection==='rarewhales'?'RARE WHALES':'WHALESTREET'} #${a.tokenId}</span><button type="button" data-remove="${key(a)}" aria-label="Remove ${esc(label(a))}">×</button></div><button class="agent-portrait" data-inspect="${key(a)}" aria-label="Select ${esc(label(a))} and view trading results" aria-pressed="${key(a)===selected}">${avatar(a)}<span class="inspect-label">${key(a)===selected?'SELECTED AGENT':'VIEW MY RESULTS ↗'}</span></button><div class="agent-info"><h4 class="agent-name">${STRATEGIES[a.strategy].name.toUpperCase()}</h4><div class="agent-sub"><span>${a.profile.name} · DNA ${a.profile.hash.slice(0,6)}</span><span>${money(a.startEquity)} budget</span></div><div class="agent-stats"><span>NERVE<strong>${a.profile.risk.toFixed(3)}%</strong></span><span>REACH<strong>${a.profile.targetMultiplier>1?'+':''}${((a.profile.targetMultiplier-1)*100).toFixed(0)}%</strong></span><span>CARGO<strong>${a.profile.allocation}%</strong></span></div><label>ASSIGN TACTIC<select data-tactic="${key(a)}" aria-label="Strategy for ${esc(label(a))}">${Object.entries(STRATEGIES).map(([id,t])=>`<option value="${id}" ${a.strategy===id?'selected':''}>${t.icon} ${t.name}</option>`).join('')}</select></label><p class="agent-result"><span>Net replay P/L</span><b class="${a.result.stats.pnl>=0?'positive':'negative'}">${a.result.stats.pnl>0?'+':''}${money(a.result.stats.pnl)}</b></p><div class="agent-mini-stats"><span><b>${a.result.stats.count}</b> trades</span><span><b>${a.result.stats.count?a.result.stats.winRate.toFixed(0)+'%':'—'}</b> won</span><span><b>${a.result.stats.maxDrawdown.toFixed(2)}%</b> drawdown</span></div></div></article>`).join(''):'<div class="empty-roster"><h3>YOUR COMPANY NEEDS A CREW.</h3><p>Add a whale above. An empty pool keeps its budget in paper cash.</p></div>';
 }
 $('#agent-roster').addEventListener('click',event=>{
  const inspect=event.target.closest('[data-inspect]'),remove=event.target.closest('[data-remove]');
@@ -53,8 +54,21 @@ $('#agent-roster').addEventListener('click',event=>{
 });
 $('#agent-roster').addEventListener('change',event=>{if(event.target.dataset.tactic){roster=roster.map(a=>key(a)===event.target.dataset.tactic?{...a,strategy:event.target.value}:a);rosterChanged();}});
 function selectedAgent(){return company?.agents.find(a=>key(a)===selected);}
+function renderTactics(a){
+ $('#tactic-whale').textContent=a?`${label(a)} · ${money(a.startEquity)} per replay · fixed DNA ${a.profile.build}. Select another whaley above to compare its tactics.`:'Add a whaley to compare these four tactics with the same budget.';
+ $('#tactic-cards').innerHTML=Object.entries(STRATEGIES).map(([id,t],i)=>{
+  const run=a?replayAgent(practice,id,a.profile,a.startEquity):null,neutral=a?replayAgent(practice,id,NEUTRAL_PROFILE,a.startEquity):null,s=run?.stats,active=a?.strategy===id;
+  return `<article class="tactic-card tactic-${id} ${active?'is-assigned':''}"><div class="tactic-heading"><span class="tactic-icon" aria-hidden="true">${t.icon}</span><span>0${i+1} / ${t.stage.toUpperCase()}</span></div><h4>${t.name}</h4><p class="tactic-kind">${t.kind}</p><p class="tactic-description">${t.description}</p><dl class="tactic-stats"><div><dt>Net return</dt><dd class="${s&&s.returnPct>=0?'positive':'negative'}">${s?signed(s.returnPct)+'%':'—'}</dd></div><div><dt>Max drawdown</dt><dd>${s?s.maxDrawdown.toFixed(2)+'%':'—'}</dd></div><div><dt>Trades</dt><dd>${s?s.count:'—'}</dd></div><div><dt>DNA effect</dt><dd>${s?signed(s.returnPct-neutral.stats.returnPct)+' pp':'—'}</dd></div></dl><details><summary>HOW THIS TACTIC TRADES</summary><p>${t.rules}</p><p>Confirmation at candle close; earliest fill at next open. After-cost reward/risk must be at least 1.5. DNA adjusts risk, target distance and allocation. Fees 0.08% + slippage 0.05% per side.</p></details><button type="button" data-assign="${id}" aria-pressed="${active}" ${!a?'disabled':''}>${active?'✓ ASSIGNED':`ASSIGN ${t.name.toUpperCase()}`}<span aria-hidden="true">→</span></button></article>`;
+ }).join('');
+}
+$('#tactic-cards').addEventListener('click',async event=>{
+ const button=event.target.closest('[data-assign]');if(!button||!selectedAgent())return;
+ const tactic=button.dataset.assign;if(!Object.hasOwn(STRATEGIES,tactic))return;
+ roster=roster.map(a=>key(a)===selected?{...a,strategy:tactic}:a);scope='agent';await rosterChanged();
+ $('#tactic-cards').querySelector(`[data-assign="${tactic}"]`)?.focus({preventScroll:true});
+});
 function renderInspector(){
- const a=selectedAgent();if(!a){$('#dna-details').innerHTML='<p>No active agents. Add an NFT to inspect its fixed DNA.</p>';return;}
+ const a=selectedAgent();renderTactics(a);if(!a){$('#dna-details').innerHTML='<p>No active agents. Add an NFT to inspect its fixed DNA.</p>';return;}
  const p=a.profile,stat=(name,value,level,description)=>`<div class="dna-stat"><div><span>${name}</span><strong>${value}</strong></div><div class="stat-meter" aria-hidden="true">${Array.from({length:5},(_,i)=>`<i class="${i<level+2?'filled':''}"></i>`).join('')}</div><p>${description}</p></div>`;
  $('#dna-details').innerHTML=`<div class="dna-character">${avatar(a)}<div><h3>${p.name.toUpperCase()}</h3><p>${esc(label(a))}<br>${money(a.startEquity)} starting share</p></div></div>${stat('NERVE',p.risk.toFixed(3)+'%',p.levels[0],'Risk budget per trade: '+money(a.startEquity*p.risk/100)+' initially.')}${stat('REACH',`${Math.round((p.targetMultiplier-1)*100)>0?'+':''}${Math.round((p.targetMultiplier-1)*100)}%`,p.levels[1],'Distance from signal entry to target. Stops stay fixed.')}${stat('CARGO',p.allocation+'%',p.levels[2],'Maximum portion of this agent’s budget in a position.')}<p class="dna-hash">FIXED BUILD ${p.build} · SHA-256 ${p.hash.slice(0,12)}…<br>COLLECTION + TOKEN ID · SAME NFT, SAME STATS</p><p class="dna-outcome">This replay: <b>${money(a.result.stats.endEquity)}</b> with DNA / <b>${money(a.baseline.stats.endEquity)}</b> with default stats. ${a.result.stats.count} completed ${a.result.stats.count===1?'trade':'trades'}. Small samples are not a prediction.</p>`;
 }
@@ -101,7 +115,7 @@ $('#download').addEventListener('click',()=>{
  if(!company)return;const fields=['collection','tokenId','strategy','entryTime','exitTime','entry','exit','qty','pnl','reason','exitTimePrecision'];
  const quote=x=>'"'+String(x??'').replaceAll('"','""')+'"';
  const rows=company.trades.map(t=>fields.map(k=>quote(k.endsWith('Time')?new Date(t[k]).toISOString():t[k])).join(','));
- const blob=new Blob([[fields.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='whale-pool-dna-v1-historical-trades.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const blob=new Blob([[fields.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='whale-pool-tactics-v1-historical-trades.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 function updateRegistrationRoster(){
  const old=$('#captain').value;

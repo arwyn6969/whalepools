@@ -18,7 +18,7 @@ npm run build:demo
 npm run dev
 ```
 
-Open http://127.0.0.1:48372/. `npm run deploy:check` validates the Cloudflare Worker; authenticated maintainers can use `npm run deploy`. Its two routes are limited to /whalepools and /whalepools/*.
+Open http://127.0.0.1:48372/. `npm run deploy:check` validates the Cloudflare Worker; authenticated maintainers can use `npm run deploy`. The main demo stays at /whalepools/; /whalepool/ redirects there. Routes are limited to those two exact prefixes.
 
 ## What is here
 

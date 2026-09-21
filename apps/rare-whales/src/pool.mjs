@@ -1,9 +1,10 @@
 import {backtest,summarize} from '../../../dist/engine.mjs';
+import {STRATEGIES} from './config.mjs';
 import {NEUTRAL_PROFILE,validateRoster,whaleDNA} from './dna.mjs';
 
 // These are separately versioned development variants; the frozen engine is imported unchanged.
 export function replayAgent(practice,strategy,profile=NEUTRAL_PROFILE,equity=1000){
- if(!practice.replay||!['trend','recovery'].includes(strategy)||!Number.isFinite(equity)||equity<=0)throw Error('Invalid replay inputs.');
+ if(!practice.replay||!Object.hasOwn(STRATEGIES,strategy)||!Number.isFinite(equity)||equity<=0)throw Error('Invalid replay inputs.');
  if(![.225,.25,.275].includes(profile.risk)||![.95,1,1.05].includes(profile.targetMultiplier)||![22.5,25,27.5].includes(profile.allocation))throw Error('Unknown DNA settings.');
  const original=practice.replay.signals[strategy];
  const signals=original.map(s=>({...s,target:profile.targetMultiplier===1?s.target:s.entry+(s.target-s.entry)*profile.targetMultiplier}));

@@ -6,7 +6,7 @@ import {DNA_VERSION,whaleDNA,validateRoster} from './dna.mjs';
 
 const json = (data,status=200,extra={}) => Response.json(data,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...extra}});
 export const digest = async value => [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-export const policyRecord = s => ({id:s.id,registrationClosesAt:s.registrationClosesAt,startsAt:s.startsAt,endsAt:s.endsAt,market:s.market,venue:s.venue,chartInterval:s.chartInterval,contextInterval:s.contextInterval,settings:s.settings,strategies:s.strategies,access:s.access,modifierVersion:s.modifierVersion,pool:s.pool});
+export const policyRecord = s => ({id:s.id,registrationClosesAt:s.registrationClosesAt,startsAt:s.startsAt,endsAt:s.endsAt,market:s.market,venue:s.venue,chartInterval:s.chartInterval,contextInterval:s.contextInterval,settings:s.settings,strategies:s.strategies,access:s.access,modifierVersion:s.modifierVersion,tacticVersion:s.tacticVersion,pool:s.pool});
 class HttpError extends Error { constructor(status,message){super(message);this.status=status;} }
 const reject = (status,message) => {throw new HttpError(status,message);};
 async function body(request) {

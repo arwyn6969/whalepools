@@ -13,6 +13,14 @@
     {
       "pattern": "arwyn.party/whalepools/*",
       "zone_name": "arwyn.party"
+    },
+    {
+      "pattern": "arwyn.party/whalepool",
+      "zone_name": "arwyn.party"
+    },
+    {
+      "pattern": "arwyn.party/whalepool/*",
+      "zone_name": "arwyn.party"
     }
   ],
   "observability": {

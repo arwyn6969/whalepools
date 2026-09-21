@@ -1,5 +1,5 @@
 {
-  "id": "rare-whales-founding-v3",
+  "id": "rare-whales-founding-v2",
   "title": "The founding season",
   "status": "draft",
   "registrationClosesAt": null,
@@ -19,9 +19,7 @@
   },
   "strategies": [
     "trend",
-    "recovery",
-    "breakout",
-    "magnet"
+    "recovery"
   ],
   "access": {
     "confirmed": false,
@@ -38,6 +36,5 @@
     "budget": 1000,
     "allocation": "equal",
     "maxAgents": 12
-  },
-  "tacticVersion": "whale-tactics-v1"
+  }
 }

@@ -1,5 +1,12 @@
 {
   "246": "https://i2c.seadn.io/robinhood/0xcafa6d08ac4ed305c15f8d41d155499118c5f605/2047529e5778aa0d36cec1955810cc/262047529e5778aa0d36cec1955810cc.png?w=1000",
   "247": "https://i2c.seadn.io/robinhood/0xcafa6d08ac4ed305c15f8d41d155499118c5f605/51b98ca6b5c67f3c5725d76da04563/9351b98ca6b5c67f3c5725d76da04563.png?w=1000",
-  "248": "https://i2c.seadn.io/robinhood/0xcafa6d08ac4ed305c15f8d41d155499118c5f605/fc508cc1d547f6375b27c7feac4a4b/68fc508cc1d547f6375b27c7feac4a4b.png?w=1000"
+  "248": "https://i2c.seadn.io/robinhood/0xcafa6d08ac4ed305c15f8d41d155499118c5f605/fc508cc1d547f6375b27c7feac4a4b/68fc508cc1d547f6375b27c7feac4a4b.png?w=1000",
+  "whalestreet:1": {
+    "source": "https://i2c.seadn.io/robinhood/0x01f33271d74a9dcc91798c7232d3d788da93a1f6/104a8e533e9bd784b2dee8e7d04069/53104a8e533e9bd784b2dee8e7d04069.png?w=1000",
+    "item": "https://opensea.io/item/robinhood/0x01f33271d74a9dcc91798c7232d3d788da93a1f6/1",
+    "tokenURI": "ipfs://QmQ9xdFDXPvb2amLGMxhWzh1TESjt3EwfrJ9FjM4khaVxQ/1",
+    "verified": "2026-09-21",
+    "format": "AVIF returned by image CDN; example artwork, no ownership claim"
+  }
 }

@@ -7,6 +7,12 @@ test('demo canonicalizes only its own root and preserves the query',async()=>{
  const r=await demoFetch(req('/whalepools?hello=1'),env);assert.equal(r.status,308);assert.equal(r.headers.get('location'),'https://arwyn.party/whalepools/?hello=1');
  for(const p of ['/vectordesk/','/','/whalepools-other','/whalepools-other/app.js','/api/club'])assert.equal((await demoFetch(req(p),env)).status,404);
 });
+test('singular alias preserves deep links and query and never captures neighboring prefixes',async()=>{
+ for(const [input,output] of [['/whalepool','/whalepools/'],['/whalepool/','/whalepools/'],['/whalepool/app.js?v=1','/whalepools/app.js?v=1']]){
+  const r=await demoFetch(req(input),env);assert.equal(r.status,308);assert.equal(r.headers.get('location'),'https://arwyn.party'+output);
+ }
+ for(const p of ['/whalepooling/','/whalepool-other','/whalepool-other/app.js'])assert.equal((await demoFetch(req(p),env)).status,404);
+});
 test('demo rewrites allowed static assets under the exact prefix',async()=>{
  for(const p of demoPaths){const r=await demoFetch(req('/whalepools'+p),env);assert.equal(r.status,200);assert.equal(await r.text(),p==='/'?'/index.html':p);assert.match(r.headers.get('content-security-policy'),/frame-ancestors 'none'/);}
  assert.equal((await demoFetch(req('/whalepools/app.js','HEAD'),env)).body,null);
