@@ -1,3 +1,7 @@
+# Current decision · 21 September 2026
+
+RW-006 supersedes the earlier free-testnet recommendation below: the owner requested paid non-staking claims and delegated the settings. The prepared version uses 100 WWAX per eligible NFT per 30-day global period for twelve periods, a 0.0001 ETH project fee per NFT, and a full fixed reserve. The deployment wallet is the permanent fee recipient. Claims remain closed until an actual deployment is verified. See [CLAIMS.md](CLAIMS.md) for exact behavior, fee economics and launch steps. Earlier exploration is retained below for context.
+
 # Whale Wax: design review, 21 September 2026
 
 Status: proposals, not launched features or financial promises. The playable demo has no token, staking, reward balance, deposits, fees, live orders or public registration. This document makes no change to replay rules or the frozen Vector Desk studies.

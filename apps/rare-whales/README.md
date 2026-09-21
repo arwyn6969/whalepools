@@ -1,6 +1,8 @@
 # Whale Pools — Rare Whales trading companies
 
-RW-005, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
+RW-006, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
+
+**WWAX launch preparation:** fixed-supply token, paid non-staking claims, local wallet deployment desk and verification flow are now implemented. Contracts are not yet deployed. See [CLAIMS.md](CLAIMS.md) for the selected settings, tests and exact deployment steps.
 
 ## Run
 
@@ -65,7 +67,7 @@ Data: inspected UBTC/USDC Hyperliquid spot candles, 1h with 4h signal context, *
 
 ## Hosting and next milestone
 
-The demo targets [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker with main routes `/whalepools` and `/whalepools/*`, plus aliases `/whalepool` and `/whalepool/*` which redirect to the plural form, preserving query and path. It has no bindings, secrets, database, RPC calls, authentication, token or money-changing endpoints. Fifteen explicitly allowed static files are embedded as gzip data in its small bundle. No existing owner API, DB, schedule or paid service is changed.
+The demo targets [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker with main routes `/whalepools` and `/whalepools/*`, plus aliases `/whalepool` and `/whalepool/*` which redirect to the plural form, preserving query and path. It has no bindings, secrets, database, authentication or server transaction endpoints. Once a verified deployment is configured, the browser reads Robinhood RPC and requests claims directly through the holder’s wallet; current configuration has no deployment. Sixteen explicitly allowed static files are embedded as gzip data in its small bundle. No existing owner API, DB, schedule or paid service is changed.
 
 `npm run build:demo` generates `build/cloudflare-worker.mjs`; `npm run deploy:check` validates the Wrangler candidate and `npm run deploy` publishes it using an authenticated Cloudflare CLI. The initial deployment can also use the Cloudflare API plugin with the same ES module and metadata. `wrangler.jsonc` is the reproducible deployment configuration. The original authenticated prototype remains in `src/worker.mjs` and is not imported into the demo bundle.
 

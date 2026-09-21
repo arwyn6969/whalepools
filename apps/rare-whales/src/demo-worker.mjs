@@ -1,14 +1,15 @@
 import season from '../season.json' with {type:'json'};
 import {COLLECTIONS,STRATEGIES} from './config.mjs';
 
-export const demoPaths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif','/art/wax-tub.svg','/art/surfboard.svg','/art/holy-brick.svg','/art/captain-crown.svg']);
+export const demoPaths=new Set(['/','/index.html','/app.js','/style.css','/practice.json','/claims.json','/whale.avif','/art/pixel.ttf','/art/OFL.txt','/art/whale-246.avif','/art/whale-247.avif','/art/whale-248.avif','/art/whalestreet-1.avif','/art/wax-tub.svg','/art/surfboard.svg','/art/holy-brick.svg','/art/captain-crown.svg']);
 export const demoHeaders={
- 'content-security-policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+ 'content-security-policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://rpc.mainnet.chain.robinhood.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
  'x-content-type-options':'nosniff','referrer-policy':'no-referrer','permissions-policy':'camera=(), microphone=(), geolocation=()',
  'cache-control':'no-store'
 };
 const json=(data,status=200)=>Response.json(data,{status,headers:demoHeaders});
-// This demo has no database, wallet authentication, RPC calls, secrets or transaction handlers.
+// No database, wallet authentication, secrets or server transaction handlers.
+// The browser can read Robinhood RPC and request wallet claims only after deployment verification.
 export async function demoFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
  if(base==='/whalepools'&&(url.pathname==='/whalepool'||url.pathname.startsWith('/whalepool/'))){url.pathname='/whalepools'+url.pathname.slice('/whalepool'.length);if(url.pathname==='/whalepools')url.pathname+='/';return new Response(null,{status:308,headers:{...demoHeaders,location:url.href}});}

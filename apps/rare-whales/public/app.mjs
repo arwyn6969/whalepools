@@ -2,6 +2,8 @@ import {CHAIN_ID,STRATEGIES,COLLECTIONS} from '../src/config.mjs';
 import {MAX_AGENTS,validateRoster} from '../src/dna.mjs';
 import {NEUTRAL_PROFILE} from '../src/dna.mjs';
 import {replayPool,replayAgent} from '../src/pool.mjs';
+import {initClaims} from './claims.mjs';
+void initClaims();
 const $=s=>document.querySelector(s);
 const asset=p=>new URL(p.replace(/^\//,''),import.meta.url).href;
 let chartState,equipment='surfboard';

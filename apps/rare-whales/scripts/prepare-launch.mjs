@@ -1,0 +1,14 @@
+import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+import {build} from 'esbuild';
+import {keccak256} from 'viem';
+import {fileURLToPath} from 'node:url';
+const app=new URL('../',import.meta.url),out=new URL('build/launch/',app);
+const artifacts=JSON.parse(await readFile(new URL('build/contracts/artifacts.json',app)));
+await mkdir(out,{recursive:true});
+const data={version:1,chainId:4663,creationCodeHash:keccak256(artifacts.contracts.WhaleWaxClaims.bytecode),bytecode:artifacts.contracts.WhaleWaxClaims.bytecode,compiler:artifacts.compiler,sourceSha256:artifacts.sourceSha256,eligibility:JSON.parse(await readFile(new URL('contracts/eligibility.json',app)))};
+await writeFile(new URL('launch.json',out),JSON.stringify(data,null,2)+'\n');
+for(const file of ['index.html','style.css'])await copyFile(new URL('operator/'+file,app),new URL(file,out));
+await copyFile(new URL('public/art/wax-tub.svg',app),new URL('wax-tub.svg',out));
+await copyFile(new URL('build/contracts/standard-input.json',app),new URL('standard-input.json',out));
+await build({entryPoints:[fileURLToPath(new URL('operator/launch.mjs',app))],outfile:fileURLToPath(new URL('launch.js',out)),bundle:true,format:'esm',target:'es2022',minify:true});
+console.log('Deployment package prepared: build/launch/. No transaction sent. Run npm run launch:serve and open http://127.0.0.1:48374/.');

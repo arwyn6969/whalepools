@@ -1,0 +1,22 @@
+{
+  "chainId": 4663,
+  "block": "69073297",
+  "blockHash": "0x9a2d94038b3b370082f015dd8daf52fd4227bb650651655782b5b9b431756953",
+  "eligibility": "Minted NFT identities at this block. Current owner at claim time receives the reward. Later IDs are excluded.",
+  "collections": [
+    {
+      "key": "rarewhales",
+      "address": "0xcafa6d08ac4ed305c15f8d41d155499118c5f605",
+      "firstId": 1,
+      "lastId": 420,
+      "mintEvents": 420
+    },
+    {
+      "key": "whalestreet",
+      "address": "0x01f33271d74a9dcc91798c7232d3d788da93a1f6",
+      "firstId": 1,
+      "lastId": 3319,
+      "mintEvents": 3319
+    }
+  ]
+}

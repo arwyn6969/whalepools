@@ -1,0 +1,12 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {createPublicClient,http,keccak256} from 'viem';
+import {claimChain,verifyDeployment} from '../src/claims.mjs';
+const hash=process.argv[2];if(!/^0x[0-9a-fA-F]{64}$/.test(hash||''))throw Error('Supply the deployment transaction hash: npm run launch:verify -- 0x…');
+const app=new URL('../',import.meta.url),artifacts=JSON.parse(await readFile(new URL('build/contracts/artifacts.json',app)));
+const client=createPublicClient({chain:claimChain,transport:http()});
+const receipt=await client.getTransactionReceipt({hash});
+const manifest={version:1,chainId:4663,creationCodeHash:keccak256(artifacts.contracts.WhaleWaxClaims.bytecode),deployment:{address:receipt.contractAddress,transactionHash:hash}};
+const d=await verifyDeployment(client,manifest);
+await writeFile(new URL('public/deployment.json',app),JSON.stringify({deployment:manifest.deployment},null,2)+'\n');
+console.log(JSON.stringify({claims:d.address,token:d.token,treasury:d.treasury,startsAt:String(d.startsAt),endsAt:String(d.endsAt)},null,2));
+console.log('Verified public/deployment.json written. Rebuild, review and publish the website to activate its wallet flow.');

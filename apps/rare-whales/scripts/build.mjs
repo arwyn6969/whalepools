@@ -5,6 +5,8 @@ import path from 'node:path';
 import {build} from 'esbuild';
 import {buildPractice} from '../src/practice.mjs';
 import {validateSeason} from '../src/config.mjs';
+import {compileContracts} from './compile-contracts.mjs';
+import {keccak256} from 'viem';
 const app=fileURLToPath(new URL('..',import.meta.url)),repo=path.resolve(app,'../..');
 const load=async p=>JSON.parse(await readFile(p,'utf8'));
 const hash=async p=>createHash('sha256').update(await readFile(p)).digest('hex');
@@ -20,6 +22,9 @@ for(const name of ['UBTC-1h.json','UBTC-4h.json']){
 }
 if(JSON.stringify(season.settings)!==JSON.stringify({...protocol.settings}))throw Error('Founding practice settings must match the declared frozen settings.');
 await mkdir(path.join(app,'build/public'),{recursive:true});
+const contracts=await compileContracts();
+const deployment=await load(path.join(app,'public/deployment.json'));
+await writeFile(path.join(app,'build/public/claims.json'),JSON.stringify({version:1,chainId:4663,creationCodeHash:keccak256(contracts.contracts.WhaleWaxClaims.bytecode),...deployment}));
 for(const file of ['index.html','style.css','whale.avif'])await copyFile(path.join(app,'public',file),path.join(app,'build/public',file));
 await cp(path.join(app,'public/art'),path.join(app,'build/public/art'),{recursive:true});
 const practice=buildPractice({bars:await load(path.join(repo,'research/data/UBTC-1h.json')),context:await load(path.join(repo,'research/data/UBTC-4h.json')),protocol,sourceHashes:hashes});

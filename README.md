@@ -4,7 +4,7 @@ Build a company of NFT whale traders. Pick your whales, inspect their fixed DNA 
 
 **[Play the demo](https://arwyn.party/whalepools/)** · **[Whale Wax concept review](apps/rare-whales/ECONOMY.md)** · **[Technical guide](apps/rare-whales/README.md)**
 
-This is a playable demo, not a live investment product. No token, NFT staking, claim fees, deposits, live orders or wallet registration are enabled. The Wax Lab previews proposed equipment.
+This is a playable demo, not a live investment product. No token, NFT staking, claim fees, deposits, live orders or wallet registration are enabled. The Wax Lab previews proposed equipment. Fixed-supply WWAX contracts and a local wallet launch desk are prepared; see [claim launch guide](apps/rare-whales/CLAIMS.md). On-chain deployment is still pending.
 
 ## Run locally
 
