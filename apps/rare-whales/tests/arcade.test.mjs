@@ -15,7 +15,7 @@ const season=await read('../arcade.json'),practice=buildPractice({bars:await rea
 function fixture(t){
  const owner=privateKeyToAccount(generatePrivateKey()),other=privateKeyToAccount(generatePrivateKey()),DB=database();t.after(()=>DB.close());let time=1000000,chain=4663,nftOwner=owner.address,balance=10n;const reads=[];
  const client={getChainId:async()=>chain,getBlockNumber:async()=>100n,verifyMessage:async args=>verifyMessage(args),readContract:async p=>{reads.push(p);return p.functionName==='ownerOf'?nftOwner:balance;}};
- const board=createArcadeBoard({season,scores,ruleHash,client,holdings:async({address})=>({address,block:'98',items:[{collection:'rarewhales',tokenId:1}]}),now:()=>time}),api=createApi({season,board,client,now:()=>time}),origin='https://arcade.test',env={DB,APP_ORIGIN:origin,COOKIE_NAME:'wp_arcade_session',COOKIE_PATH:'/whalepools/'};
+ const board=createArcadeBoard({season,scores,ruleHash,client,now:()=>time}),api=createApi({season,board,client,now:()=>time}),origin='https://arcade.test',env={DB,APP_ORIGIN:origin,COOKIE_NAME:'wp_arcade_session',COOKIE_PATH:'/whalepools/'};
  const send=async(path,{data,cookie,method=data?'POST':'GET',requestOrigin=origin}={})=>{const r=await api(new Request(origin+path,{method,headers:{origin:requestOrigin,...(cookie?{cookie}:{}),...(data?{'content-type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})}),env);return {status:r.status,headers:r.headers,data:await r.json()};};
  const challenge=async(who=owner)=>{const r=await send('/api/auth/challenge',{data:{address:who.address}});assert.equal(r.status,200);return {...r.data,signature:await who.signMessage({message:r.data.message})};};
  const login=async(who=owner)=>{const proof=await challenge(who),r=await send('/api/auth/verify',{data:proof});assert.equal(r.status,200);return r.headers.get('set-cookie');};
@@ -70,8 +70,4 @@ test('one latest entry per wallet, shared tie ranks, ownership snapshots on tran
 test('free arcade needs the configured NFT balance and rate limits unauthenticated challenges',async t=>{
  const f=fixture(t),cookie=await f.login();f.setBalance(0n);assert.equal((await f.send('/api/seat',{cookie,data:f.input})).status,403);f.setBalance(BigInt(season.access.minimumBalance));assert.equal((await f.send('/api/seat',{cookie,data:f.input})).status,200);
  let status;for(let i=0;i<20;i++)status=(await f.send('/api/auth/challenge',{data:{address:f.owner.address}})).status;assert.equal(status,429);
-});
-
-test('inventory requires authentication and uses the session wallet rather than a supplied address',async t=>{
- const f=fixture(t);assert.equal((await f.send('/api/whales')).status,401);const cookie=await f.login();const r=await f.send('/api/whales?address='+f.other.address,{cookie});assert.equal(r.status,200);assert.equal(r.data.address,f.owner.address.toLowerCase());assert.equal(r.data.items.length,1);
 });

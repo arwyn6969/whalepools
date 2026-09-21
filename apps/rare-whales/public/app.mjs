@@ -4,6 +4,7 @@ import {NEUTRAL_PROFILE} from '../src/dna.mjs';
 import {replayPool,replayAgent} from '../src/pool.mjs';
 import {createPortraitLoader} from './portraits.mjs';
 import {createWalletPicker} from './wallet-picker.mjs';
+import {loadHoldings} from '../src/holdings.mjs';
 import {inventoryItems,retainOwned,chooseCaptain} from './owned-crew.mjs';
 const pickWallet=createWalletPicker(window,document);
 const $=s=>document.querySelector(s);
@@ -150,8 +151,8 @@ function syncCrewWallet(){
 async function loadOwnedWhales(){
  const wallet=club?.me?.address;if(!wallet)return;
  const revision=++inventoryRevision;ownedLoading=true;ownedError='';renderOwnedWhales();
- try{const result=await api('/api/whales');if(revision!==inventoryRevision||club?.me?.address!==wallet)return;if(result.address!==wallet)throw Error('Wallet changed. Reconnect before choosing whales.');ownedWhales=inventoryItems(result.items);ownedLoaded=true;const retained=retainOwned(roster,ownedWhales);if(retained.length!==roster.length){roster=retained;rosterChanged();}}
- catch(e){if(revision===inventoryRevision){ownedLoaded=false;ownedError=e.message;}}
+ try{const result=await loadHoldings({address:wallet});if(revision!==inventoryRevision||club?.me?.address!==wallet)return;if(result.address!==wallet)throw Error('Wallet changed. Reconnect before choosing whales.');ownedWhales=inventoryItems(result.items);ownedLoaded=true;const retained=retainOwned(roster,ownedWhales);if(retained.length!==roster.length){roster=retained;rosterChanged();}}
+ catch(e){if(revision===inventoryRevision){ownedLoaded=false;ownedError='Your whales could not be loaded from Robinhood. Refresh your holdings to try again. Your published company is unchanged.';}}
  finally{if(revision===inventoryRevision){ownedLoading=false;renderOwnedWhales();}}
 }
 $('#download').addEventListener('click',()=>{
