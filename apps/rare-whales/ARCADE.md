@@ -5,9 +5,9 @@ RW-009 launches a free game at **https://arwyn.party/whalepools/** (singular `/w
 ## Play and publish
 
 1. Try the example crew in Pool HQ. Add/remove whales and choose one of the four tactics for each.
-2. Before publishing, replace example NFTs with your own. One Rare Whales or WhaleStreet NFT qualifies for the free arcade; up to 12 owned agents share $1,000 equally.
+2. Signing in clears the example crew. Use My Company’s owned-whale dropdown to add your NFTs; the first added whale becomes captain, and the captain selector switches between crew members. One Rare Whales or WhaleStreet NFT qualifies for the free arcade; up to 12 owned agents share $1,000 equally.
 3. Open My Company in a browser with an injected wallet extension or inside the wallet's browser. Select Robinhood Chain, connect and sign the login message. No NFT approval, transfer, transaction or gas fee is requested.
-4. Choose a company name and captain, consent to public display, then publish. The server checks every NFT at one Robinhood block and calculates the score itself. Submitted browser balances or modified DNA are ignored.
+4. Choose whales from your wallet, a company name and captain, consent to public display, then publish. The server checks every NFT at one Robinhood block and calculates the score itself. Submitted browser balances or modified DNA are ignored.
 5. View Leaderboard. Each wallet has one current entry. Changing the sandbox does not change that entry until publishing again. Load a saved roster, resubmit an improved crew, or remove the public entry.
 
 The owner's original 1/1 / founder / ten-combined-NFT gate remains in the draft founding season. The free arcade uses separate `arcade.json`, season ID `whale-pools-arcade-v1` and separate entries. The founder wallet and promo list still need confirmation before a prospective founding season opens.
@@ -37,3 +37,9 @@ Schema: migrations 0001–0003, applied to the dedicated database. Statements ar
 Local `npm run dev` serves the arcade on 127.0.0.1:48372 with `work/arcade.sqlite`. `RW_LOCAL_AUTH=1` selects the earlier draft membership prototype in separate `work/club.sqlite`. Do not publish synthetic UI fixtures or test identities. Real extension signing plus an actual NFT-owning user's first submission remains an important first-player check; automated tests cover signature verification, ownership rejection, scoring, update and withdrawal.
 
 Primary references: [Sign-In with Ethereum](https://eips.ethereum.org/EIPS/eip-4361), [Cloudflare D1 database API](https://developers.cloudflare.com/d1/worker-api/d1-database/), [D1 included usage and limits](https://developers.cloudflare.com/d1/platform/pricing/).
+
+## Wallet inventory (RW-011)
+
+The authenticated `/api/whales` endpoint uses the session wallet only. These collections do not support ERC-721 owner enumeration. The server reads incoming/outgoing Transfer logs from the official Robinhood RPC, orders the most recent event per token, and requires the resulting count to equal each on-chain balance at the same block (head minus two). Balance reads use the configured dRPC endpoint; both chain IDs must be 4663. This avoids a paid indexer. The public log endpoint is an availability dependency: errors, incomplete history or more than 20,000 combined transfer records per collection show a retry state, never a fabricated empty inventory. Publishing still independently checks every `ownerOf`.
+
+Initial or restored sign-in clears browser examples and loads the signed-in wallet’s whales. Previously published entries remain saved and can be loaded explicitly, filtered against the current inventory. Wallet change/sign-out clears the local crew and invalidates pending inventory responses. Pool HQ offers the same owned-whale dropdown while signed in; manual token-number previews remain available when signed out. Refresh rechecks holdings; an unsuccessful refresh preserves the drafted and published crew but disables new inventory additions.

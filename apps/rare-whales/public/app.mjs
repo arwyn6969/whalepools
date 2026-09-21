@@ -4,6 +4,7 @@ import {NEUTRAL_PROFILE} from '../src/dna.mjs';
 import {replayPool,replayAgent} from '../src/pool.mjs';
 import {createPortraitLoader} from './portraits.mjs';
 import {createWalletPicker} from './wallet-picker.mjs';
+import {inventoryItems,retainOwned,chooseCaptain} from './owned-crew.mjs';
 const pickWallet=createWalletPicker(window,document);
 const $=s=>document.querySelector(s);
 const asset=p=>new URL(p.replace(/^\//,''),import.meta.url).href;
@@ -22,6 +23,7 @@ for(const button of document.querySelectorAll('[data-retry-art]'))button.addEven
 const example=[{collection:'rarewhales',tokenId:245,strategy:'trend'},{collection:'rarewhales',tokenId:246,strategy:'recovery'},{collection:'whalestreet',tokenId:1,strategy:'breakout'},{collection:'rarewhales',tokenId:248,strategy:'magnet'}];
 let roster=example,selected='rarewhales:245',scope='pool',practice,company,club,provider,busy=false,generation=0,walletRevision=0,crewGeneration=0;
 try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=validateRoster(JSON.parse(saved));}catch{/* A corrupted local draft never affects registered companies. */}
+let crewWallet=null,ownedWhales=[],ownedLoaded=false,ownedLoading=false,ownedError='',inventoryRevision=0;
 const watchedProviders=new WeakSet();
 async function api(path,data,method=data?'POST':'GET'){
  const r=await fetch(asset(path),{method,credentials:'same-origin',headers:data?{'content-type':'application/json'}:{},...(data?{body:JSON.stringify(data)}:{})});
@@ -36,7 +38,7 @@ function route(){
  if(hash==='roster')$('#roster').scrollIntoView({block:'start'});
 }
 window.addEventListener('hashchange',route);
-function rosterChanged(){try{localStorage.setItem('whale-pools-sandbox-v1',JSON.stringify(roster));}catch{/* Practice still works without local persistence. */}updateRegistrationRoster();return refreshCompany();}
+function rosterChanged(){try{localStorage.setItem('whale-pools-sandbox-v1',JSON.stringify(roster));}catch{/* Practice still works without local persistence. */}updateRegistrationRoster();renderOwnedWhales();return refreshCompany();}
 async function refreshCompany(){
  if(!practice)return;
  const epoch=++generation;$('#download').disabled=true;
@@ -115,9 +117,43 @@ function renderScoreboard(){
 }
 $('#chart-agent').addEventListener('change',e=>{scope=e.target.value==='pool'?'pool':'agent';if(scope==='agent')selected=e.target.value;renderAgents();renderInspector();renderScoreboard();});
 for(const button of document.querySelectorAll('[data-view]'))button.addEventListener('click',()=>{scope=button.dataset.view;renderScoreboard();});
-$('#add-agent').addEventListener('click',()=>{$('#add-form').hidden=!$('#add-form').hidden;if(!$('#add-form').hidden)$('#add-token').focus();});
+function addWhale(whale){
+ if(busy)return;
+ try{if(club?.me&&(!ownedLoaded||!ownedWhales.some(a=>key(a)===key(whale))))throw Error('Choose a whale from your wallet dropdown.');
+ roster=validateRoster([...roster,{...whale,strategy:'trend'}]);selected=key(roster.at(-1));scope='agent';$('#roster-message').textContent=`${label(roster.at(-1))} added to ${club?.me?'your crew':'the sandbox'}.`;$('#add-form').hidden=true;$('#add-token').value='';rosterChanged();
+ }catch(error){$('#roster-message').textContent=error.message;$('#seat-message').textContent=error.message;}
+}
+$('#add-agent').addEventListener('click',()=>{$('#add-form').hidden=!$('#add-form').hidden;renderOwnedWhales();if(!$('#add-form').hidden)$(club?.me?'#add-owned':'#add-token').focus();});
 $('#cancel-add').addEventListener('click',()=>{$('#add-form').hidden=true;});
-$('#add-form').addEventListener('submit',e=>{e.preventDefault();try{roster=validateRoster([...roster,{collection:$('#add-collection').value,tokenId:Number($('#add-token').value),strategy:'trend'}]);selected=key(roster.at(-1));scope='agent';$('#roster-message').textContent=`${label(roster.at(-1))} added to the sandbox. This does not prove ownership.`;$('#add-form').hidden=true;$('#add-token').value='';rosterChanged();}catch(error){$('#roster-message').textContent=error.message;}});
+$('#add-form').addEventListener('submit',e=>{e.preventDefault();const whale=club?.me?ownedWhales.find(a=>key(a)===$('#add-owned').value):{collection:$('#add-collection').value,tokenId:Number($('#add-token').value)};if(whale)addWhale(whale);});
+$('#add-owned-whale').addEventListener('click',()=>{const whale=ownedWhales.find(a=>key(a)===$('#owned-whale').value);if(whale)addWhale(whale);});
+for(const id of ['owned-whale','add-owned'])$('#'+id).addEventListener('change',renderOwnedWhales);
+$('#refresh-whales').addEventListener('click',()=>{if(!busy)loadOwnedWhales();});
+$('#registration-roster').addEventListener('click',event=>{const remove=event.target.closest('[data-crew-remove]');if(remove&&!busy){roster=roster.filter(a=>key(a)!==remove.dataset.crewRemove);rosterChanged();}});
+function renderOwnedWhales(){
+ const signedIn=!!club?.me,available=ownedWhales.filter(a=>!roster.some(b=>key(b)===key(a)));
+ $('#manual-whale-fields').hidden=signedIn;$('#owned-add-label').hidden=!signedIn;$('#add-token').required=!signedIn;$('#add-token').disabled=signedIn;
+ $('#add-submit').textContent=signedIn?'ADD TO CREW':'ADD TO SANDBOX';$('#add-submit').disabled=signedIn&&(!ownedLoaded||ownedLoading||!available.length||roster.length>=MAX_AGENTS);
+ $('#add-help').textContent=signedIn?'Choose a whale held by the signed-in wallet. Ownership is checked again when publishing.':'Preview a token from either collection. Sign in to choose from your own wallet’s whales.';
+ const placeholder=!signedIn?'Sign in to load your whales':ownedLoading?'Loading your whales…':!ownedLoaded?'Refresh to load your whales':!available.length?(ownedWhales.length?'All your whales are already in this crew':'No whales found in this wallet'):'Choose a whale…';
+ for(const id of ['owned-whale','add-owned']){const select=$('#'+id),old=select.value;select.innerHTML=`<option value="">${placeholder}</option>`+available.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join('');if(available.some(a=>key(a)===old))select.value=old;select.disabled=!signedIn||ownedLoading||!ownedLoaded||!available.length||roster.length>=MAX_AGENTS;}
+ $('#add-owned-whale').disabled=!signedIn||ownedLoading||!ownedLoaded||!available.length||roster.length>=MAX_AGENTS||!$('#owned-whale').value;
+ if(signedIn)$('#add-submit').disabled=$('#add-submit').disabled||!$('#add-owned').value;
+ $('#refresh-whales').disabled=!signedIn||ownedLoading;
+ $('#owned-status').textContent=!signedIn?'Your Rare Whales and WhaleStreet NFTs will appear here after sign-in.':ownedLoading?'Reading both collections from Robinhood…':ownedError||(!ownedLoaded?'Load your wallet’s whales to build a crew.':`${ownedWhales.length} ${ownedWhales.length===1?'whale':'whales'} found · ${roster.length}/${MAX_AGENTS} in your crew. ${ownedWhales.length?(available.length?'Select a whale above and add it.':'All available whales are in your crew.'):'Check that you signed in with the wallet holding your NFTs.'}`);
+ $('#sandbox-label').textContent=signedIn?'YOUR WALLET CREW · HISTORICAL REPLAY':'SANDBOX · OWNERSHIP NOT VERIFIED';
+}
+function syncCrewWallet(){
+ const next=club?.me?.address||null;if(next===crewWallet)return false;
+ crewWallet=next;inventoryRevision++;ownedWhales=[];ownedLoaded=false;ownedLoading=false;ownedError='';roster=[];selected=null;scope='pool';$('#add-form').hidden=true;$('#seat-form').reset();$('#seat-message').textContent='';$('#roster-message').textContent=next?'Example crew cleared. Choose your own whales in My Company.':'Signed out. Your private crew has been cleared from this browser.';rosterChanged();return true;
+}
+async function loadOwnedWhales(){
+ const wallet=club?.me?.address;if(!wallet)return;
+ const revision=++inventoryRevision;ownedLoading=true;ownedError='';renderOwnedWhales();
+ try{const result=await api('/api/whales');if(revision!==inventoryRevision||club?.me?.address!==wallet)return;if(result.address!==wallet)throw Error('Wallet changed. Reconnect before choosing whales.');ownedWhales=inventoryItems(result.items);ownedLoaded=true;const retained=retainOwned(roster,ownedWhales);if(retained.length!==roster.length){roster=retained;rosterChanged();}}
+ catch(e){if(revision===inventoryRevision){ownedLoaded=false;ownedError=e.message;}}
+ finally{if(revision===inventoryRevision){ownedLoading=false;renderOwnedWhales();}}
+}
 $('#download').addEventListener('click',()=>{
  if(!company)return;const fields=['collection','tokenId','strategy','entryTime','exitTime','entry','exit','qty','pnl','reason','exitTimePrecision'];
  const quote=x=>'"'+String(x??'').replaceAll('"','""')+'"';
@@ -125,10 +161,12 @@ $('#download').addEventListener('click',()=>{
  const blob=new Blob([[fields.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='whale-pool-tactics-v1-historical-trades.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 function updateRegistrationRoster(){
- const old=$('#captain').value;
- $('#captain').innerHTML=roster.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join('');
- if([...$('#captain').options].some(o=>o.value===old))$('#captain').value=old;
- $('#registration-roster').textContent=roster.length?`${roster.length} agents · $1,000 shared equally (${money(1000/roster.length)} each). Every NFT must belong to the connected wallet.`:'Add at least one whale you own before publishing.';
+ const captain=chooseCaptain(roster,$('#captain').value);
+ $('#captain').innerHTML=roster.length?roster.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join(''):'<option value="">Add a whale to your crew first</option>';
+ $('#captain').value=captain;$('#captain').disabled=!roster.length;
+ $('#registration-roster').innerHTML=roster.length?`<p>${roster.length} ${roster.length===1?'agent':'agents'} · $1,000 shared equally (${money(1000/roster.length)} each).</p><div class="company-crew">`+roster.map(a=>`<div>${avatar(a)}<span>${esc(label(a))}</span><button type="button" data-crew-remove="${key(a)}" aria-label="Remove ${esc(label(a))} from company">×</button></div>`).join('')+'</div>':'Add at least one whale from your wallet above. Your first whale becomes captain.';
+ hydrateArt($('#registration-roster'));
+ $('#check').disabled=!club?.me||!roster.length;$('#reserve').disabled=!club?.me||!club?.registrationOpen||!roster.length;
 }
 function renderClub(){
  if(!club)return;const me=club.me,seat=me?.seat;
@@ -141,10 +179,10 @@ function renderClub(){
  $('#registration-notice').textContent=club.arcade?'Free historical arcade. Publish your current crew; the server verifies ownership and calculates the score. You can edit, resubmit or remove your entry.':club.registrationOpen?`Registration closes ${new Date(club.season.registrationClosesAt).toLocaleString('en-GB',{timeZone:'UTC'})} UTC. Your roster and tactics lock then.`:club.season.status==='draft'?'Registration is waiting for the approved 1/1 list, founder wallet, future dates and season recorder.':'Registration is closed. Company rosters and tactics are fixed.';
  $('#remove').hidden=!seat||!club.registrationOpen;$('#load-saved').hidden=!seat;
  if(seat)$('#nickname').value=seat.nickname;
- updateRegistrationRoster();
+ updateRegistrationRoster();renderOwnedWhales();
 }
-async function refreshClub(){const epoch=walletRevision,next=await api('/api/club');if(epoch!==walletRevision)return;club=next;renderClub();}
-async function logout(){walletRevision++;if(club)club.me=null;$('#seat-message').textContent='';$('#seat-form').reset();renderClub();try{await api('/api/auth/logout',{});}catch(e){message('Server sign-out failed. Reconnect before saving changes. '+e.message);}}
+async function refreshClub(){const epoch=walletRevision,next=await api('/api/club');if(epoch!==walletRevision)return;club=next;const changed=syncCrewWallet();renderClub();if(changed&&club.me)await loadOwnedWhales();}
+async function logout(){walletRevision++;if(club)club.me=null;syncCrewWallet();renderOwnedWhales();$('#seat-message').textContent='';$('#seat-form').reset();renderClub();try{await api('/api/auth/logout',{});}catch(e){message('Server sign-out failed. Reconnect before saving changes. '+e.message);}}
 async function signIn(){
  if(club?.demo){location.hash='seat';return;}
  if(!club){message('The demo status is still loading. Please try again in a moment.');return;}
@@ -159,18 +197,18 @@ async function signIn(){
   const signature=await provider.request({method:'personal_sign',params:[encoded,addresses[0]]});
   const current=await provider.request({method:'eth_accounts'});if(epoch!==walletRevision||current?.[0]?.toLowerCase()!==addresses[0].toLowerCase()||Number(await provider.request({method:'eth_chainId'}))!==CHAIN_ID)throw Error('The wallet changed during sign-in. Please reconnect.');
   await api('/api/auth/verify',{id:challenge.id,signature});if(epoch!==walletRevision){await logout();throw Error('Wallet changed during sign-in. Please reconnect.');}await refreshClub();if(epoch!==walletRevision){await logout();throw Error('Wallet changed during sign-in. Please reconnect.');}location.hash='seat';
- }catch(e){message(e.code===4001?'Wallet request cancelled. Nothing was registered.':e.message||'Wallet sign-in failed.');}finally{busy=false;}
+ }catch(e){message(e.code===4001?'Wallet request cancelled. Nothing was registered.':e.message||'Wallet sign-in failed.');}finally{busy=false;renderOwnedWhales();}
 }
 $('#connect').addEventListener('click',signIn);$('#seat-connect').addEventListener('click',signIn);$('#logout').addEventListener('click',logout);
 function seatInput(){const captain=roster.find(a=>key(a)===$('#captain').value);return {nickname:$('#nickname').value,collection:captain?.collection??null,tokenId:captain?.tokenId??null,strategy:captain?.strategy??'trend',publish:$('#publish').checked,agents:roster,ruleHash:club?.arcade?.ruleHash};}
 async function seatAction(path){
  if(busy)return;busy=true;const epoch=walletRevision,input=seatInput();$('#seat-message').textContent='Checking your whales on Robinhood…';$('#seat-fields').disabled=true;$('#check').disabled=true;$('#reserve').disabled=true;
  try{const result=await api(path,input);if(epoch!==walletRevision)return;if(path==='/api/seat'){await refreshClub();if(epoch!==walletRevision)return;$('#seat-message').textContent=result.stats?`Published ${input.agents.length} agents: ${signed(result.stats.returnPct)}% net historical return. View your company on the leaderboard.`:'Company and roster saved.';}else $('#seat-message').textContent=result.eligible?`${result.label} verified · every agent in this roster belongs to this wallet.`:result.reason;}
- catch(e){if(epoch===walletRevision){$('#seat-message').textContent=e.message;if(/sign in|Connect/.test(e.message)){if(club)club.me=null;renderClub();}}}
- finally{busy=false;$('#seat-fields').disabled=!club?.me;$('#check').disabled=!club?.me;$('#reserve').disabled=!club?.me||!club?.registrationOpen;}
+ catch(e){if(epoch===walletRevision){$('#seat-message').textContent=e.message;if(/sign in|Connect/.test(e.message)){if(club)club.me=null;syncCrewWallet();renderClub();}}}
+ finally{busy=false;$('#seat-fields').disabled=!club?.me;$('#check').disabled=!club?.me||!roster.length;$('#reserve').disabled=!club?.me||!club?.registrationOpen||!roster.length;}
 }
 $('#check').addEventListener('click',()=>seatAction('/api/eligibility'));$('#seat-form').addEventListener('submit',e=>{e.preventDefault();seatAction('/api/seat');});
-$('#load-saved').addEventListener('click',()=>{if(!club?.me?.seat)return;roster=validateRoster(club.me.seat.agents||[]);rosterChanged();$('#captain').value=club.me.seat.collection?`${club.me.seat.collection}:${club.me.seat.tokenId}`:'founder';$('#seat-message').textContent='Your published crew is loaded. Changes stay in the sandbox until you publish again.';});
+$('#load-saved').addEventListener('click',()=>{if(!club?.me?.seat)return;if(!ownedLoaded){$('#seat-message').textContent='Load your wallet’s whales first.';return;}roster=retainOwned(validateRoster(club.me.seat.agents||[]),ownedWhales);rosterChanged();$('#captain').value=chooseCaptain(roster,`${club.me.seat.collection}:${club.me.seat.tokenId}`);$('#seat-message').textContent='Still-owned members of your published crew are loaded. Changes take effect on the board when you publish again.';});
 $('#remove').addEventListener('click',async()=>{if(busy)return;busy=true;const epoch=walletRevision;$('#seat-fields').disabled=true;try{await api('/api/seat',undefined,'DELETE');if(epoch!==walletRevision)return;$('#seat-form').reset();await refreshClub();if(epoch===walletRevision)$('#seat-message').textContent='Your company has been removed from the public leaderboard. You can publish again later.';}catch(e){if(epoch===walletRevision)$('#seat-message').textContent=e.message;}finally{busy=false;$('#seat-fields').disabled=!club?.me;}});
 let boardPools=[];
 async function loadCrew(){
@@ -184,7 +222,7 @@ async function loadCrew(){
  finally{if(epoch===crewGeneration)$('#refresh-board').disabled=false;}
 }
 $('#refresh-board').addEventListener('click',loadCrew);
-$('#crew-list').addEventListener('click',event=>{const id=event.target.closest('[data-replay-pool]')?.dataset.replayPool,pool=boardPools.find(p=>p.id===id);if(!pool)return;roster=validateRoster(pool.agents);scope='pool';rosterChanged();location.hash='roster';message('Exploring '+pool.nickname+' in your sandbox. This does not change your published company or verify ownership.');});
+$('#crew-list').addEventListener('click',event=>{const id=event.target.closest('[data-replay-pool]')?.dataset.replayPool,pool=boardPools.find(p=>p.id===id);if(!pool)return;if(club?.me){message('Sign out to explore another company’s sandbox crew. Your own crew is unchanged.');return;}roster=validateRoster(pool.agents);scope='pool';rosterChanged();location.hash='roster';message('Exploring '+pool.nickname+' in your sandbox. This does not change your published company or verify ownership.');});
 
 function renderTradingStats(run){
  const s=run.stats,trades=run.trades||[],wins=trades.filter(t=>t.pnl>0),losses=trades.filter(t=>t.pnl<0),flat=trades.length-wins.length-losses.length;
@@ -204,5 +242,5 @@ function renderCursor(){
 }
 $('#replay-cursor').addEventListener('input',renderCursor);
 $('#show-hold').addEventListener('change',renderScoreboard);
-updateRegistrationRoster();route();
+updateRegistrationRoster();renderOwnedWhales();route();
 Promise.allSettled([refreshClub(),fetch(asset('/practice.json')).then(r=>{if(!r.ok)throw Error('Historical data could not load.');return r.json();}).then(data=>{practice=data;return refreshCompany();})]).then(results=>{for(const r of results)if(r.status==='rejected')message(r.reason.message);});

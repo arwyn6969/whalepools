@@ -2,16 +2,18 @@ import {HttpError,digest,policyRecord} from './api.mjs';
 import {checkSeat,ownsAgents,chainClient} from './access.mjs';
 import {validateRoster} from './dna.mjs';
 import {COLLECTIONS,STRATEGIES} from './config.mjs';
+import {loadHoldings} from './holdings.mjs';
 import {scoreArcade} from './arcade-score.mjs';
 const reject=(status,message)=>{throw new HttpError(status,message);};
 const project=row=>row?{id:row.id,nickname:row.nickname,owner:row.wallet,collection:row.captain_collection,tokenId:row.captain_id,agents:JSON.parse(row.agents_json),stats:JSON.parse(row.stats_json),rank:row.rank??null,basis:'holder',ownershipBlock:row.ownership_block,updatedAt:row.updated_at,joinedAt:row.joined_at}:null;
-export function createArcadeBoard({season,scores,ruleHash,client:injectedClient,now=Date.now}){
+export function createArcadeBoard({season,scores,ruleHash,client:injectedClient,holdings=loadHoldings,now=Date.now}){
  const meta={mode:'arcade',id:season.id,title:season.title,from:scores.from,until:scores.until,ruleHash,ranking:'net-return-1e-6-pct',ownership:'at-submission',minimumBalance:season.access.minimumBalance};
  return {
   async club(db,me){const row=me?await db.prepare('SELECT * FROM rw_arcade_entries WHERE season=? AND wallet=?').bind(season.id,me.address).first():null;const count=await db.prepare('SELECT COUNT(*) AS n FROM rw_arcade_entries WHERE season=?').bind(season.id).first();return {arcade:meta,season,collections:COLLECTIONS,strategies:STRATEGIES,registrationOpen:true,seats:count.n,me:me?{address:me.address,seat:project(row)}:null};},
   async crew(db){const rows=await db.prepare('SELECT *, RANK() OVER (ORDER BY rank_score DESC) AS rank FROM rw_arcade_entries WHERE season=? ORDER BY rank_score DESC,updated_at,id LIMIT 100').bind(season.id).all();const count=await db.prepare('SELECT COUNT(*) AS n FROM rw_arcade_entries WHERE season=?').bind(season.id).first();return {arcade:meta,status:'arcade',hasPerformance:false,total:count.n,seats:rows.results.map(project)};},
   async handle({request,db,me,env,data}){
    const path=new URL(request.url).pathname,t=now();
+   if(request.method==='GET'&&path==='/api/whales'){try{return await holdings({address:me.address,env});}catch(e){console.error('arcade-inventory-unavailable',e.name,String(e.details||e.shortMessage||e.message||'').replace(/0x[0-9a-fA-F]{40,}/g,'[redacted]').replace(/https?:\/\/\S+/g,'[redacted]').slice(0,180));reject(503,'Your whales could not be loaded from Robinhood. Please refresh your holdings. Your published company has not changed.');}}
    if(request.method==='DELETE'&&path==='/api/seat'){await db.prepare('DELETE FROM rw_arcade_entries WHERE season=? AND wallet=?').bind(season.id,me.address).run();return {ok:true};}
    if(request.method!=='POST'||!['/api/seat','/api/eligibility'].includes(path))reject(404,'Not found.');
    let agents;try{agents=validateRoster(data.agents);}catch(e){reject(400,e.message);}
