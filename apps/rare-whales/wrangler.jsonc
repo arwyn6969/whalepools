@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "whale-pools-demo",
+  "main": "./build/cloudflare-worker.mjs",
+  "compatibility_date": "2026-09-21",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "arwyn.party/whalepools",
+      "zone_name": "arwyn.party"
+    },
+    {
+      "pattern": "arwyn.party/whalepools/*",
+      "zone_name": "arwyn.party"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}

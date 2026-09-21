@@ -1,0 +1,24 @@
+{
+  "name": "rare-whales-vector-club",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "dev": "node --experimental-sqlite scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --experimental-sqlite --test tests/*.test.mjs",
+    "deploy:check": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "build:demo": "npm run build && node scripts/bundle-demo.mjs && node scripts/check-demo.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.55.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "wrangler": "^4.136.1"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "rare-whales-founding-v2",
+  "title": "The founding season",
+  "status": "draft",
+  "registrationClosesAt": null,
+  "startsAt": null,
+  "endsAt": null,
+  "initialEquity": 1000,
+  "market": "UBTC / USDC",
+  "venue": "Hyperliquid spot",
+  "chartInterval": "1h",
+  "contextInterval": "4h",
+  "settings": {
+    "equity": 1000,
+    "risk": 0.25,
+    "allocation": 25,
+    "fee": 0.08,
+    "slippage": 0.05
+  },
+  "strategies": [
+    "trend",
+    "recovery"
+  ],
+  "access": {
+    "confirmed": false,
+    "minimumBalance": 10,
+    "balanceCollections": [
+      "rarewhales",
+      "whalestreet"
+    ],
+    "promoTokenIds": [],
+    "founderWallets": []
+  },
+  "modifierVersion": "whale-dna-v1",
+  "pool": {
+    "budget": 1000,
+    "allocation": "equal",
+    "maxAgents": 12
+  }
+}

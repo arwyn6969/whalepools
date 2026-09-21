@@ -1,0 +1,8 @@
+node_modules/
+work/
+build/
+.wrangler/
+worker-configuration.d.ts
+.env*
+.dev.vars*
+.DS_Store

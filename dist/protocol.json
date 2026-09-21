@@ -1,0 +1,47 @@
+{
+  "id": "vector-entry-volume-v1",
+  "declaredAt": "2026-09-19T22:31:09Z",
+  "primaryMarket": "UBTC",
+  "replicationMarkets": [
+    "UETH",
+    "HYPE"
+  ],
+  "chartInterval": "1h",
+  "contextInterval": "4h",
+  "forwardStart": "2026-09-20T00:00:00Z",
+  "forwardEndExclusive": "2026-11-19T00:00:00Z",
+  "historicalStart": "2026-07-24T10:00:00Z",
+  "historicalEndExclusive": "2026-09-19T22:00:00Z",
+  "settings": {
+    "equity": 1000,
+    "risk": 0.25,
+    "allocation": 25,
+    "fee": 0.08,
+    "slippage": 0.05
+  },
+  "minimumTradesPerArm": 30,
+  "experiments": [
+    {
+      "id": "trend-volume",
+      "mode": "trend",
+      "name": "Does vector volume improve trend retests?",
+      "treatment": "Original trend retest: bullish vector break, confirmed uptrend, midpoint retest.",
+      "control": "Identical rule with no volume threshold on the breakout candle."
+    },
+    {
+      "id": "sweep-volume",
+      "mode": "recovery",
+      "name": "Does climax volume improve sweep recovery?",
+      "treatment": "Original sweep and recovery: bearish climax sweep, reclaim and confirmation.",
+      "control": "Identical rule with no climax threshold on the sweep candle; both arms keep the same vector-zone target rule."
+    }
+  ],
+  "decisionRule": "Review a hypothesis only after the complete fixed window, at least 30 trades in each primary-market arm, positive treatment net return and same-trade double-cost return, and higher treatment average net R than control at both cost levels. Require the same signs in at least one replication market with 30 trades per arm. Otherwise insufficient or unsupported; no automatic promotion to live trading. This operational screen is not a statistical significance test.",
+  "interpretation": "Each arm is a separate strategy path with one position and daily loss locks. Removing the volume condition can replace pending patterns and alter later entries. Controls can include vectors. This tests the entry-volume filter, not all uses of vectors or causal market-maker behavior.",
+  "changePolicy": "No parameter or market changes during the forward window. Any change creates a new protocol and future start. Missing data or unavailable warmup blocks a final verdict. Interim views never authorize trading; final review is at the fixed end date. No background collection or automatic trading.",
+  "implementationSha256": {
+    "engine.mjs": "d163ba58f7bd9c68760a13150a522125fa7047acdeec79d25c3e1adef702cfa4",
+    "research.mjs": "1f7b7cf9b4d6a4e3add4fca6ca21e11554fbb3bd20ae6d814d6e6c2022b9812e",
+    "experiments.mjs": "cd27d58d42f8e6d823c69cb38d4cf5dc7232e1d06c87b1c0a1a8981c2edd0782"
+  }
+}

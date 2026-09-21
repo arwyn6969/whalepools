@@ -1,0 +1,9 @@
+node_modules/
+build/
+work/
+.env
+.env.*
+!.env.example
+.wrangler/
+worker-configuration.d.ts
+.dev.vars*

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.hyperliquid.xyz/info",
+  "type": "candleSnapshot",
+  "closedBefore": 1789855200000,
+  "note": "Frozen from the 19 September 2026 public responses. Incomplete candles permanently removed; do not reclassify them using the wall clock.",
+  "files": [
+    {
+      "path": "research/data/UBTC-1h.json",
+      "market": "UBTC",
+      "coin": "@142",
+      "interval": "1h",
+      "candles": 4800,
+      "sha256": "4033a31029a3664d475cb6f72a7afac70ad494f24ef386255aa0bc505678dec9"
+    },
+    {
+      "path": "research/data/UBTC-4h.json",
+      "market": "UBTC",
+      "coin": "@142",
+      "interval": "4h",
+      "candles": 1460,
+      "sha256": "d87f33a2fe82c29c5cd831fae1242ecc364a6fda576411aa0a419ffc4bbb0895"
+    }
+  ],
+  "exportNote": "Whale Pools export: only the two UBTC fixtures needed for this historical demo. Their original bytes and hashes are unchanged."
+}
