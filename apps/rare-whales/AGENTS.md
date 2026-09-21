@@ -2,7 +2,9 @@
 
 Use **whale** and **whales** throughout product copy, documentation and conversation. The token concept is **Whale Wax / WWAX**. Keep this naming in future additions.
 
-This is a public historical paper-trading demo. WWAX contracts and the paid non-staking claim interface are prepared under RW-006; public/deployment.json is null until a real wallet deployment is verified. Claims, staking, paid equipment, prospective seasons and live execution are not active. Show the actual release state. Keep artwork and simulation work separate from any later financial deployment.
+RW-009 launches a free wallet-authenticated historical arcade. The server verifies NFT ownership at submission, calculates the fixed historical score and stores one editable public entry per wallet in the isolated Whale Pools D1 database. The free arcade requires one NFT from either collection. The original founding-season gate remains in season.json for a later prospective season. Do not describe historical arcade ranks as live paper results, real trading, independent experiments or proven skill.
+
+WWAX is deferred at the owner's request. Its prepared contracts and local launch tools remain saved; no token has been deployed and public/deployment.json stays null. The public interface contains no Wax Lab or financial wallet actions. Do not activate claims incidentally while releasing the game.
 
 The maintained source is in `public/` and `src/`. Generated `build/` is ignored. New served artwork must be included in both Worker allowlists and have a correct MIME type. Check the actual browser journey and export only the scoped public app.
 

@@ -1,8 +1,8 @@
 # Whale Pools — Rare Whales trading companies
 
-RW-008, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
+RW-009, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model while retaining the same access routes. No token, live trader, company season or pooled deposits have launched.
 
-**WWAX launch preparation:** fixed-supply token, paid non-staking claims, local wallet deployment desk and verification flow are now implemented. Contracts are not yet deployed. See [CLAIMS.md](CLAIMS.md) for the selected settings, tests and exact deployment steps.
+**Free arcade launch:** wallet sign-in, fresh NFT ownership checks, server-calculated historical scores, editable public company entries and withdrawal are implemented. The public game requires one Rare Whales or WhaleStreet NFT to publish; anyone can use the sandbox. The original founding-season membership rules are preserved separately. Wax and payments are deferred; prepared contracts remain undeployed. See [ARCADE.md](ARCADE.md) for current rules, data, transfer policy and operations.
 
 ## Run
 
@@ -15,11 +15,11 @@ npm run build:demo
 npm run dev
 ```
 
-Open `http://127.0.0.1:48372/`. The server binds only to loopback. `RW_PORT` changes the port. Rebuild/restart after server or season edits; reload after static edits. The default preview uses the same read-only demo handler as production. Set `RW_LOCAL_AUTH=1` only to test the separate local membership prototype; its state is in ignored `work/club.sqlite`. Never commit/export user sessions or member records into test fixtures. Sandbox rosters are stored in browser localStorage under `whale-pools-sandbox-v1`; these are unverified preview choices, not registered companies.
+Open `http://127.0.0.1:48372/`. The server binds only to loopback. `RW_PORT` changes the port. Rebuild/restart after server or season edits; reload after static edits. The default preview uses the same wallet/arcade handler as production, backed by a separate local work/arcade.sqlite file. Set `RW_LOCAL_AUTH=1` only to test the archived local founding-membership prototype; its state is in ignored `work/club.sqlite`. Never commit/export user sessions or member records into test fixtures. Sandbox rosters are stored in browser localStorage under `whale-pools-sandbox-v1`; these are unverified preview choices, not registered companies.
 
 ## Owner → company → agents
 
-One qualifying wallet controls one pool per season, with up to 12 NFT agents. The pool starts with **$1,000 total**, split equally across its active roster. Owners can add/remove agents and assign Current Surfer, Reef Reclaimer, Cannonball Breakout or Vector Magnet to each. Each NFT has a fixed DNA profile. Adding agents divides the same capital; it does not multiply the starting balance. A founder can register an empty pool, whose budget stays in cash.
+One qualifying wallet controls one pool per season, with up to 12 NFT agents. The pool starts with **$1,000 total**, split equally across its active roster. Owners can add/remove agents and assign Current Surfer, Reef Reclaimer, Cannonball Breakout or Vector Magnet to each. Each NFT has a fixed DNA profile. Adding agents divides the same capital; it does not multiply the starting balance. An empty sandbox stays in paper cash. Publishing an arcade score requires at least one owned NFT.
 
 Historical practice works without a wallet. The initial example roster is Rare Whales #245, #246, WhaleStreet #1 and Rare Whales #248, one on each tactic in display order. Existing saved browser rosters are retained. These are real collection illustrations, not claimed user holdings or invented registered participants. Other valid collection/token combinations can be previewed; their existence and ownership are not asserted. Five example portraits are bundled. Other NFTs resolve their current on-chain tokenURI and IPFS image through gateway.pinata.cloud, with at most three metadata requests in progress, a bounded session cache, timeouts and a Retry portraits control. Failures show an explicit unavailable portrait; neither a picture nor adding an ID verifies ownership. The gateway is an external availability dependency; no paid indexer is required. Use your own token numbers before attempting registration.
 
@@ -93,4 +93,4 @@ The Tactic Arcade compares all four tactics for the selected whale, using the sa
 
 The Wax Lab uses original SVG pixel illustrations for a 90s-inspired Whale Wax surf tub, upright surfboard, neon-green Holy Brick of Kek and gemmed crown. Rebuild the art with `node scripts/draw-wax-art.mjs`. These are original game illustrations, not copied surf-wax packaging.
 
-The Wax Lab offers a free ephemeral visual fit check for Surfboard, Holy Brick of Kek and Captain’s Drip. None is purchasable or minted. Prospective leaderboard and ENS displays are planned, not populated with fictional owners. See [ECONOMY.md](ECONOMY.md) for the staking review, weak spots, build order and effort estimates.
+RW-009 removes the Wax Lab from the public game. Its earlier fit check was an ephemeral visual preview of Surfboard, Holy Brick of Kek and Captain’s Drip. None is purchasable or minted. A historical arcade leaderboard is available; prospective season and ENS displays remain planned. Public owners are verified wallet addresses, never guessed ENS names. See [ECONOMY.md](ECONOMY.md) for the staking review, weak spots, build order and effort estimates.

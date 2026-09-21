@@ -2,12 +2,10 @@ import {CHAIN_ID,STRATEGIES,COLLECTIONS} from '../src/config.mjs';
 import {MAX_AGENTS,validateRoster} from '../src/dna.mjs';
 import {NEUTRAL_PROFILE} from '../src/dna.mjs';
 import {replayPool,replayAgent} from '../src/pool.mjs';
-import {initClaims} from './claims.mjs';
 import {createPortraitLoader} from './portraits.mjs';
-void initClaims();
 const $=s=>document.querySelector(s);
 const asset=p=>new URL(p.replace(/^\//,''),import.meta.url).href;
-let chartState,equipment='surfboard';
+let chartState;
 const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2}).format(n);
 const signed=n=>`${n>0?'+':''}${n.toFixed(2)}`;
 const date=t=>new Date(t).toLocaleDateString('en-GB',{day:'2-digit',month:'short',timeZone:'UTC'});
@@ -20,7 +18,7 @@ const avatar=a=>`<img data-whale-art data-collection="${a.collection}" data-toke
 const hydrateArt=container=>portraits.hydrate(container);
 for(const button of document.querySelectorAll('[data-retry-art]'))button.addEventListener('click',()=>portraits.retry(document));
 const example=[{collection:'rarewhales',tokenId:245,strategy:'trend'},{collection:'rarewhales',tokenId:246,strategy:'recovery'},{collection:'whalestreet',tokenId:1,strategy:'breakout'},{collection:'rarewhales',tokenId:248,strategy:'magnet'}];
-let roster=example,selected='rarewhales:245',scope='pool',practice,company,club,provider,busy=false,generation=0;
+let roster=example,selected='rarewhales:245',scope='pool',practice,company,club,provider,busy=false,generation=0,walletRevision=0,crewGeneration=0;
 try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=validateRoster(JSON.parse(saved));}catch{/* A corrupted local draft never affects registered companies. */}
 const watchedProviders=new WeakSet();
 async function api(path,data,method=data?'POST':'GET'){
@@ -29,11 +27,10 @@ async function api(path,data,method=data?'POST':'GET'){
 }
 function message(text){$('#global-message').textContent=text;$('#global-message').hidden=!text;}
 function route(){
- const hash=location.hash.slice(1),current=['seat','crew','wax'].includes(hash)?hash:'practice';
+ const hash=location.hash.slice(1),current=['seat','crew'].includes(hash)?hash:'practice';
  for(const section of document.querySelectorAll('.page'))section.hidden=section.id!==current;
  for(const link of document.querySelectorAll('nav a')){if(link.dataset.page===current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
  if(current==='crew')loadCrew();
- if(current==='wax')renderOutfit();
  if(hash==='roster')$('#roster').scrollIntoView({block:'start'});
 }
 window.addEventListener('hashchange',route);
@@ -45,7 +42,7 @@ async function refreshCompany(){
   const next=await replayPool(practice,roster);if(epoch!==generation)return;company=next;
   if(!company.agents.some(a=>key(a)===selected))selected=company.agents[0]?key(company.agents[0]):null;
   const s=company.stats;$('#end-equity').textContent=money(s.endEquity);$('#net-return').textContent=signed(s.returnPct)+'%';$('#net-return').className=s.returnPct>=0?'positive':'negative';$('#drawdown').textContent=s.maxDrawdown.toFixed(2)+'%';$('#agent-count').textContent=`${roster.length} / ${MAX_AGENTS}`;$('#budget-split').textContent=roster.length?`${money(1000/roster.length)} starting budget each`:'$1,000 stays in paper cash';
-  renderAgents();renderInspector();renderScoreboard();renderOutfit();$('#download').disabled=!company.trades.length;
+  renderAgents();renderInspector();renderScoreboard();$('#download').disabled=!company.trades.length;
  }catch(e){if(epoch!==generation)return;message('Replay unavailable: '+e.message);company=null;for(const id of ['end-equity','net-return','drawdown'])$('#'+id).textContent='—';$('#chart').replaceChildren();$('#trade-rows').innerHTML='<tr><td colspan="5">Replay unavailable. No result has been substituted.</td></tr>';}
 }
 function renderAgents(){
@@ -55,7 +52,7 @@ function renderAgents(){
 }
 $('#agent-roster').addEventListener('click',event=>{
  const inspect=event.target.closest('[data-inspect]'),remove=event.target.closest('[data-remove]');
- if(inspect){selected=inspect.dataset.inspect;scope='agent';renderAgents();renderInspector();renderScoreboard();renderOutfit();}
+ if(inspect){selected=inspect.dataset.inspect;scope='agent';renderAgents();renderInspector();renderScoreboard();}
  if(remove){roster=roster.filter(a=>key(a)!==remove.dataset.remove);rosterChanged();}
 });
 $('#agent-roster').addEventListener('change',event=>{if(event.target.dataset.tactic){roster=roster.map(a=>key(a)===event.target.dataset.tactic?{...a,strategy:event.target.value}:a);rosterChanged();}});
@@ -114,7 +111,7 @@ function renderScoreboard(){
  $('#trade-rows').innerHTML=trades.length?trades.toReversed().map(t=>`<tr><td>${t.collection==='rarewhales'?'RW':'WS'} #${t.tokenId}</td><td>${stamp(t.entryTime)}</td><td>${stamp(t.exitTime)}</td><td class="${t.pnl>=0?'positive':'negative'}">${t.pnl>0?'+':''}${money(t.pnl)}</td><td>${esc(t.reason)}</td></tr>`).join(''):'<tr><td colspan="5">No completed trades in this replay.</td></tr>';
  $('#trade-note').textContent=`${scope==='pool'?'Whole company':label(a)} · ${trades.length} completed trades · ${run.skipped} entries skipped by execution checks. Some exits use a candle-close time proxy. CSV exports the whole company.`;
 }
-$('#chart-agent').addEventListener('change',e=>{scope=e.target.value==='pool'?'pool':'agent';if(scope==='agent')selected=e.target.value;renderAgents();renderInspector();renderScoreboard();renderOutfit();});
+$('#chart-agent').addEventListener('change',e=>{scope=e.target.value==='pool'?'pool':'agent';if(scope==='agent')selected=e.target.value;renderAgents();renderInspector();renderScoreboard();});
 for(const button of document.querySelectorAll('[data-view]'))button.addEventListener('click',()=>{scope=button.dataset.view;renderScoreboard();});
 $('#add-agent').addEventListener('click',()=>{$('#add-form').hidden=!$('#add-form').hidden;if(!$('#add-form').hidden)$('#add-token').focus();});
 $('#cancel-add').addEventListener('click',()=>{$('#add-form').hidden=true;});
@@ -127,49 +124,65 @@ $('#download').addEventListener('click',()=>{
 });
 function updateRegistrationRoster(){
  const old=$('#captain').value;
- $('#captain').innerHTML=roster.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join('')+'<option value="founder">Founder · no NFT captain</option>';
+ $('#captain').innerHTML=roster.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join('');
  if([...$('#captain').options].some(o=>o.value===old))$('#captain').value=old;
- $('#registration-roster').textContent=roster.length?`${roster.length} agents · $1,000 shared equally (${money(1000/roster.length)} each). Every NFT must belong to the connected wallet.`:'No agents selected. A founder can register an empty company; its budget stays in cash.';
+ $('#registration-roster').textContent=roster.length?`${roster.length} agents · $1,000 shared equally (${money(1000/roster.length)} each). Every NFT must belong to the connected wallet.`:'Add at least one whale you own before publishing.';
 }
 function renderClub(){
  if(!club)return;const me=club.me,seat=me?.seat;
  if(club.demo){
   $('#season-status').textContent='PREVIEW';$('#connect').textContent='EXPLORE WHAT’S NEXT';$('#connect').disabled=false;$('#logout').hidden=true;$('#seat-connect').hidden=true;$('#wallet-status').textContent='Registration is not open in this public demo.';$('#sign-in-note').textContent='Try every sandbox control without connecting a wallet. Your roster stays in this browser.';$('#seat-fields').disabled=true;$('#reserve').disabled=true;$('#registration-notice').textContent='Coming after the demo: approved promo 1/1s, founder access, future season dates and a working paper recorder. No wallet connection or NFT approval is needed today.';updateRegistrationRoster();return;
  }
- $('#season-status').textContent=club.season.status.toUpperCase();$('#connect').textContent=me?`${me.address.slice(0,6)}…${me.address.slice(-4)}`:'CONNECT WALLET';$('#connect').disabled=!!me;$('#logout').hidden=!me;$('#seat-connect').hidden=!!me;
+ $('#season-status').textContent=club.arcade?'ARCADE OPEN':club.season.status.toUpperCase();$('#connect').textContent=me?`${me.address.slice(0,6)}…${me.address.slice(-4)}`:'CONNECT WALLET';$('#connect').disabled=!!me;$('#logout').hidden=!me;$('#seat-connect').hidden=!!me;
  $('#wallet-status').textContent=me?`Owner wallet: ${me.address}`:'Sign in to prove control of your Robinhood wallet.';
  $('#seat-fields').disabled=!me;$('#reserve').disabled=!me||!club.registrationOpen;
- $('#registration-notice').textContent=club.registrationOpen?`Registration closes ${new Date(club.season.registrationClosesAt).toLocaleString('en-GB',{timeZone:'UTC'})} UTC. Your roster and tactics lock then.`:club.season.status==='draft'?'Registration is waiting for the approved 1/1 list, founder wallet, future dates and season recorder.':'Registration is closed. Company rosters and tactics are fixed.';
+ $('#registration-notice').textContent=club.arcade?'Free historical arcade. Publish your current crew; the server verifies ownership and calculates the score. You can edit, resubmit or remove your entry.':club.registrationOpen?`Registration closes ${new Date(club.season.registrationClosesAt).toLocaleString('en-GB',{timeZone:'UTC'})} UTC. Your roster and tactics lock then.`:club.season.status==='draft'?'Registration is waiting for the approved 1/1 list, founder wallet, future dates and season recorder.':'Registration is closed. Company rosters and tactics are fixed.';
  $('#remove').hidden=!seat||!club.registrationOpen;$('#load-saved').hidden=!seat;
  if(seat)$('#nickname').value=seat.nickname;
  updateRegistrationRoster();
 }
-async function refreshClub(){club=await api('/api/club');renderClub();}
-async function logout(){if(club)club.me=null;$('#seat-message').textContent='';$('#seat-form').reset();renderClub();try{await api('/api/auth/logout',{});}catch(e){message('Server sign-out failed. Reconnect before saving changes. '+e.message);}}
+async function refreshClub(){const epoch=walletRevision,next=await api('/api/club');if(epoch!==walletRevision)return;club=next;renderClub();}
+async function logout(){walletRevision++;if(club)club.me=null;$('#seat-message').textContent='';$('#seat-form').reset();renderClub();try{await api('/api/auth/logout',{});}catch(e){message('Server sign-out failed. Reconnect before saving changes. '+e.message);}}
 async function signIn(){
- if(club?.demo){location.hash='wax';return;}
+ if(club?.demo){location.hash='seat';return;}
  if(!club){message('The demo status is still loading. Please try again in a moment.');return;}
  if(busy)return;busy=true;message('');
- try{provider=window.ethereum;if(!provider?.request)throw Error('Open this prototype in a browser with a Robinhood-compatible wallet extension. The company sandbox works without a wallet.');
+ try{provider=window.ethereum;if(!provider?.request)throw Error('Open this site in a browser with your wallet extension, or inside your wallet’s browser. The sandbox works without a wallet.');
   if(provider.on&&!watchedProviders.has(provider)){provider.on('accountsChanged',logout);provider.on('chainChanged',logout);watchedProviders.add(provider);}
   const addresses=await provider.request({method:'eth_requestAccounts'});if(!addresses?.[0])throw Error('No wallet selected.');
   if(Number(await provider.request({method:'eth_chainId'}))!==CHAIN_ID)throw Error('Select Robinhood Chain in your wallet, then connect again.');
+  const epoch=walletRevision;
   const challenge=await api('/api/auth/challenge',{address:addresses[0]}),encoded='0x'+[...new TextEncoder().encode(challenge.message)].map(n=>n.toString(16).padStart(2,'0')).join('');
+  if(epoch!==walletRevision)throw Error('Wallet changed. Please reconnect.');
   const signature=await provider.request({method:'personal_sign',params:[encoded,addresses[0]]});
-  const current=await provider.request({method:'eth_accounts'});if(current?.[0]?.toLowerCase()!==addresses[0].toLowerCase()||Number(await provider.request({method:'eth_chainId'}))!==CHAIN_ID)throw Error('The wallet changed during sign-in. Please reconnect.');
-  await api('/api/auth/verify',{id:challenge.id,signature});await refreshClub();location.hash='seat';
+  const current=await provider.request({method:'eth_accounts'});if(epoch!==walletRevision||current?.[0]?.toLowerCase()!==addresses[0].toLowerCase()||Number(await provider.request({method:'eth_chainId'}))!==CHAIN_ID)throw Error('The wallet changed during sign-in. Please reconnect.');
+  await api('/api/auth/verify',{id:challenge.id,signature});if(epoch!==walletRevision){await logout();throw Error('Wallet changed during sign-in. Please reconnect.');}await refreshClub();if(epoch!==walletRevision){await logout();throw Error('Wallet changed during sign-in. Please reconnect.');}location.hash='seat';
  }catch(e){message(e.code===4001?'Wallet request cancelled. Nothing was registered.':e.message||'Wallet sign-in failed.');}finally{busy=false;}
 }
 $('#connect').addEventListener('click',signIn);$('#seat-connect').addEventListener('click',signIn);$('#logout').addEventListener('click',logout);
-function seatInput(){const captain=roster.find(a=>key(a)===$('#captain').value);return {nickname:$('#nickname').value,collection:captain?.collection??null,tokenId:captain?.tokenId??null,strategy:captain?.strategy??'trend',publish:$('#publish').checked,agents:roster};}
-async function seatAction(path){if(busy)return;busy=true;$('#seat-message').textContent='Checking wallet ownership on Robinhood…';$('#check').disabled=true;$('#reserve').disabled=true;try{const result=await api(path,seatInput());if(path==='/api/seat'){await refreshClub();$('#seat-message').textContent='Company and agent roster saved. Ownership and DNA were verified by the server.';}else $('#seat-message').textContent=result.eligible?`${result.label} verified${result.total!==undefined?` · ${result.total} qualifying NFTs`:''}. Every agent will be verified when saving.`:result.reason;}catch(e){$('#seat-message').textContent=e.message;}finally{busy=false;$('#check').disabled=false;$('#reserve').disabled=!club?.registrationOpen;}}
+function seatInput(){const captain=roster.find(a=>key(a)===$('#captain').value);return {nickname:$('#nickname').value,collection:captain?.collection??null,tokenId:captain?.tokenId??null,strategy:captain?.strategy??'trend',publish:$('#publish').checked,agents:roster,ruleHash:club?.arcade?.ruleHash};}
+async function seatAction(path){
+ if(busy)return;busy=true;const epoch=walletRevision,input=seatInput();$('#seat-message').textContent='Checking your whales on Robinhood…';$('#seat-fields').disabled=true;$('#check').disabled=true;$('#reserve').disabled=true;
+ try{const result=await api(path,input);if(epoch!==walletRevision)return;if(path==='/api/seat'){await refreshClub();if(epoch!==walletRevision)return;$('#seat-message').textContent=result.stats?`Published ${input.agents.length} agents: ${signed(result.stats.returnPct)}% net historical return. View your company on the leaderboard.`:'Company and roster saved.';}else $('#seat-message').textContent=result.eligible?`${result.label} verified · every agent in this roster belongs to this wallet.`:result.reason;}
+ catch(e){if(epoch===walletRevision){$('#seat-message').textContent=e.message;if(/sign in|Connect/.test(e.message)){if(club)club.me=null;renderClub();}}}
+ finally{busy=false;$('#seat-fields').disabled=!club?.me;$('#check').disabled=!club?.me;$('#reserve').disabled=!club?.me||!club?.registrationOpen;}
+}
 $('#check').addEventListener('click',()=>seatAction('/api/eligibility'));$('#seat-form').addEventListener('submit',e=>{e.preventDefault();seatAction('/api/seat');});
-$('#load-saved').addEventListener('click',()=>{if(!club?.me?.seat)return;roster=validateRoster(club.me.seat.agents||[]);rosterChanged();$('#captain').value=club.me.seat.collection?`${club.me.seat.collection}:${club.me.seat.tokenId}`:'founder';$('#seat-message').textContent='Saved company roster loaded into the historical sandbox. Replaying old data does not change your registered company.';});
-$('#remove').addEventListener('click',async()=>{try{await api('/api/seat',undefined,'DELETE');$('#seat-form').reset();await refreshClub();$('#seat-message').textContent='Company and roster withdrawn. You can register again while registration is open.';}catch(e){$('#seat-message').textContent=e.message;}});
-async function loadCrew(){try{const data=await api('/api/crew');$('#crew-count').textContent=`${data.seats.length} ${data.seats.length===1?'COMPANY':'COMPANIES'}${data.seats.length===100?' (FIRST 100)':''}`;$('#crew-state').textContent=`SEASON ${data.status.toUpperCase()} · NO LIVE STANDINGS`;
- $('#crew-list').innerHTML=data.seats.length?data.seats.map(pool=>`<article class="crew-member panel"><div class="panel-title purple">${esc(pool.nickname)}<span>${pool.agents.length} AGENTS</span></div><div class="company-meta">One owner wallet · ${esc(pool.basis)} access<br>$1,000 shared starting budget · ownership checked on save<br>Season performance has not been recorded.</div><div class="crew-avatars">${pool.agents.map(a=>`<div class="crew-avatar">${avatar(a)}<span>#${a.tokenId} · ${esc(a.profile.name)}<br>${esc(STRATEGIES[a.strategy].kind)}</span></div>`).join('')}</div></article>`).join(''):'<div class="empty-state"><span>≈</span><h2>THE OCEAN IS OPEN.<br>THE COMPANIES ARE COMING.</h2><p>No pools are registered yet. The founding season is still in draft.<br>You can build and replay an example whale company right now.</p><a href="#practice" class="pixel-button yellow">BUILD A SANDBOX POOL →</a></div>';
+$('#load-saved').addEventListener('click',()=>{if(!club?.me?.seat)return;roster=validateRoster(club.me.seat.agents||[]);rosterChanged();$('#captain').value=club.me.seat.collection?`${club.me.seat.collection}:${club.me.seat.tokenId}`:'founder';$('#seat-message').textContent='Your published crew is loaded. Changes stay in the sandbox until you publish again.';});
+$('#remove').addEventListener('click',async()=>{if(busy)return;busy=true;const epoch=walletRevision;$('#seat-fields').disabled=true;try{await api('/api/seat',undefined,'DELETE');if(epoch!==walletRevision)return;$('#seat-form').reset();await refreshClub();if(epoch===walletRevision)$('#seat-message').textContent='Your company has been removed from the public leaderboard. You can publish again later.';}catch(e){if(epoch===walletRevision)$('#seat-message').textContent=e.message;}finally{busy=false;$('#seat-fields').disabled=!club?.me;}});
+let boardPools=[];
+async function loadCrew(){
+ const epoch=++crewGeneration;$('#refresh-board').disabled=true;
+ try{const data=await api('/api/crew');if(epoch!==crewGeneration)return;boardPools=data.seats;
+ $('#crew-count').textContent=`${data.total??data.seats.length} ${(data.total??data.seats.length)===1?'COMPANY':'COMPANIES'}`;
+ $('#crew-state').textContent=data.total>100?'TOP 100 · HISTORICAL ARCADE':'HISTORICAL ARCADE · ROUND 01';
+ $('#crew-list').innerHTML=data.seats.length?data.seats.map(pool=>`<article class="crew-member panel"><div class="panel-title purple"><span>#${pool.rank} · ${esc(pool.nickname)}</span><span>${pool.agents.length} AGENTS</span></div><div class="board-metrics"><div><span>NET RETURN</span><strong class="${pool.stats.returnPct>=0?'positive':'negative'}">${signed(pool.stats.returnPct)}%</strong></div><div><span>DRAWDOWN</span><strong>${pool.stats.maxDrawdown.toFixed(2)}%</strong></div><div><span>TRADES</span><strong>${pool.stats.count}</strong></div><div><span>FINAL PAPER BALANCE</span><strong>${money(pool.stats.endEquity)}</strong></div></div><div class="company-meta">Owner <a href="https://robinhoodchain.blockscout.com/address/${esc(pool.owner)}" target="_blank" rel="noopener">${esc(pool.owner.slice(0,6))}…${esc(pool.owner.slice(-4))} ↗</a><br>Ownership checked ${stamp(pool.updatedAt)} UTC · block ${esc(pool.ownershipBlock)}<br>Same $1,000 starting budget · current published crew</div><div class="crew-avatars">${pool.agents.map(a=>`<div class="crew-avatar">${avatar(a)}<span>${a.collection==='rarewhales'?'RW':'WS'} #${a.tokenId} · ${esc(a.profile.name)}<br>${esc(STRATEGIES[a.strategy].name)}<br>${signed(a.stats.returnPct)}% · ${a.stats.count} ${a.stats.count===1?'trade':'trades'}</span></div>`).join('')}</div><button type="button" class="link-button board-replay" data-replay-pool="${esc(pool.id)}">EXPLORE THIS CREW’S REPLAY →</button></article>`).join(''):'<div class="empty-state"><span>≈</span><h2>THE BOARD IS OPEN.<br>BRING THE FIRST CREW.</h2><p>Sign in with a wallet that owns a Rare Whales or WhaleStreet NFT.<br>Choose your crew, publish its historical score, and make your mark.</p><a href="#seat" class="pixel-button yellow">PUBLISH MY COMPANY →</a></div>';
  hydrateArt($('#crew-list'));
- }catch(e){message(e.message);}}
+ }catch(e){if(epoch!==crewGeneration)return;$('#crew-count').textContent='BOARD UNAVAILABLE';$('#crew-state').textContent='TRY REFRESHING';$('#crew-list').textContent=e.message;}
+ finally{if(epoch===crewGeneration)$('#refresh-board').disabled=false;}
+}
+$('#refresh-board').addEventListener('click',loadCrew);
+$('#crew-list').addEventListener('click',event=>{const id=event.target.closest('[data-replay-pool]')?.dataset.replayPool,pool=boardPools.find(p=>p.id===id);if(!pool)return;roster=validateRoster(pool.agents);scope='pool';rosterChanged();location.hash='roster';message('Exploring '+pool.nickname+' in your sandbox. This does not change your published company or verify ownership.');});
 
 function renderTradingStats(run){
  const s=run.stats,trades=run.trades||[],wins=trades.filter(t=>t.pnl>0),losses=trades.filter(t=>t.pnl<0),flat=trades.length-wins.length-losses.length;
@@ -189,19 +202,5 @@ function renderCursor(){
 }
 $('#replay-cursor').addEventListener('input',renderCursor);
 $('#show-hold').addEventListener('change',renderScoreboard);
-const equipmentCopy={surfboard:['THE SURFBOARD','Proposed: make collecting an eligible whale’s allowance easier. Automation needs gas and permission; no reward multiplier or trading boost.'],brick:['HOLY BRICK OF KEK','Neon green. Spiritually unreasonable. Proposed: an HQ trophy and saved roster preset. The brick does not reverse losses.'],crown:['CAPTAIN’S DRIP','Proposed: whale cosmetics and company banners. Royal vibes, exactly the same trading rules.']};
-const equipmentArt={surfboard:'surfboard',brick:'holy-brick',crown:'captain-crown'};
-function renderOutfit(){
- const a=selectedAgent();$('#outfit-agent').innerHTML=company?.agents.length?company.agents.map(a=>`<option value="${key(a)}">${esc(label(a))}</option>`).join(''):'<option>No whales in this roster</option>';$('#outfit-agent').disabled=!a;
- if(a)$('#outfit-agent').value=selected;
- $('#outfit-stage').className='outfit-stage outfit-'+equipment;
- $('#outfit-stage').innerHTML=a?`${avatar(a)}<span class="outfit-accessory" aria-hidden="true"><img src="${asset('/art/'+equipmentArt[equipment]+'.svg')}" alt=""></span><span class="outfit-name">${esc(label(a))}</span>`:'<p>Add a whale in Pool HQ to try an outfit.</p>';
- hydrateArt($('#outfit-stage'));
- $('#outfit-title').textContent=equipmentCopy[equipment][0];$('#outfit-description').textContent=equipmentCopy[equipment][1];
- for(const b of document.querySelectorAll('[data-equipment]'))b.setAttribute('aria-pressed',String(b.dataset.equipment===equipment));
-}
-$('#outfit-agent').addEventListener('change',e=>{selected=e.target.value;scope='agent';renderAgents();renderInspector();renderScoreboard();renderOutfit();});
-for(const b of document.querySelectorAll('[data-equipment]'))b.addEventListener('click',()=>{equipment=b.dataset.equipment;renderOutfit();});
-
 updateRegistrationRoster();route();
 Promise.allSettled([refreshClub(),fetch(asset('/practice.json')).then(r=>{if(!r.ok)throw Error('Historical data could not load.');return r.json();}).then(data=>{practice=data;return refreshCompany();})]).then(results=>{for(const r of results)if(r.status==='rejected')message(r.reason.message);});

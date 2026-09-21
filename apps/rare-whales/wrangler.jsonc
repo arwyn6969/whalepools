@@ -26,5 +26,13 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.1
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "whale-pools-arcade",
+      "database_id": "4b6d5fb2-551f-4d19-9ead-299f6ab425f7",
+      "migrations_dir": "migrations"
+    }
+  ]
 }

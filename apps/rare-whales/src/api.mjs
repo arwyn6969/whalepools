@@ -7,7 +7,7 @@ import {DNA_VERSION,whaleDNA,validateRoster} from './dna.mjs';
 const json = (data,status=200,extra={}) => Response.json(data,{status,headers:{'cache-control':'no-store','x-content-type-options':'nosniff',...extra}});
 export const digest = async value => [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(x=>x.toString(16).padStart(2,'0')).join('');
 export const policyRecord = s => ({id:s.id,registrationClosesAt:s.registrationClosesAt,startsAt:s.startsAt,endsAt:s.endsAt,market:s.market,venue:s.venue,chartInterval:s.chartInterval,contextInterval:s.contextInterval,settings:s.settings,strategies:s.strategies,access:s.access,modifierVersion:s.modifierVersion,tacticVersion:s.tacticVersion,pool:s.pool});
-class HttpError extends Error { constructor(status,message){super(message);this.status=status;} }
+export class HttpError extends Error { constructor(status,message){super(message);this.status=status;} }
 const reject = (status,message) => {throw new HttpError(status,message);};
 async function body(request) {
   if (!(request.headers.get('content-type')||'').startsWith('application/json')) reject(415,'Send JSON.');
@@ -19,9 +19,9 @@ async function body(request) {
   const bytes=new Uint8Array(length);let offset=0;for(const p of parts){bytes.set(p,offset);offset+=p.length;}
   try {const value=JSON.parse(new TextDecoder().decode(bytes));if(!value||Array.isArray(value)||typeof value!=='object')throw Error();return value;}catch{reject(400,'Invalid request.');}
 }
-const cookie = (token,origin,maxAge=43200) => `rw_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${origin.startsWith('https://')?'; Secure':''}`;
-async function session(request,db,now) {
-  const token=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('rw_session='))?.slice(11);
+const cookie = (token,origin,maxAge=43200,name='rw_session',path='/') => `${name}=${token}; Path=${path}; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${origin.startsWith('https://')?'; Secure':''}`;
+async function session(request,db,now,name='rw_session') {
+  const token=(request.headers.get('cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='))?.slice(name.length+1);
   if(!token||!/^[a-f0-9]{64}$/.test(token))return null;
   return db.prepare('SELECT address,hash FROM rw_sessions WHERE hash=? AND expires>?').bind(await digest(token),now).first();
 }
@@ -32,7 +32,7 @@ async function limit(db,key,now,max=20) {
 }
 function registrationOpen(season,now) {return season.status==='registration' && now<Date.parse(season.registrationClosesAt) && now<Date.parse(season.startsAt);}
 function publicSeat(row,agents=[]){return row?{id:row.id,nickname:row.nickname,collection:row.collection,tokenId:row.token_id,strategy:row.strategy,joinedAt:row.joined_at,basis:row.access_basis,agents:agents.filter(a=>a.pool_id===row.id).map(a=>({collection:a.collection,tokenId:a.token_id,strategy:a.strategy,profile:JSON.parse(a.modifier_json)}))}:null;}
-export function createApi({season,client:injectedClient,now=Date.now}={}) {
+export function createApi({season,client:injectedClient,now=Date.now,board}={}) {
   validateSeason(season);
   return async function handle(request,env) {
     const url=new URL(request.url),origin=env.APP_ORIGIN;
@@ -44,7 +44,9 @@ export function createApi({season,client:injectedClient,now=Date.now}={}) {
       if(!['GET','POST','DELETE'].includes(request.method))reject(405,'Method not supported.');
       if(request.method!=='GET' && request.headers.get('origin')!==origin)reject(403,'Open this action from the club website.');
       if(request.method==='GET' && request.headers.get('sec-fetch-site')==='cross-site')reject(403,'Cross-site request refused.');
-      const me=await session(request,db,t);
+      const me=await session(request,db,t,env.COOKIE_NAME||'rw_session');
+      if(board&&request.method==='GET'&&url.pathname==='/api/club')return json(await board.club(db,me));
+      if(board&&request.method==='GET'&&url.pathname==='/api/crew')return json(await board.crew(db));
       if(request.method==='GET' && url.pathname==='/api/club') {
         const count=await db.prepare('SELECT COUNT(*) AS n FROM rw_seats WHERE season=?').bind(season.id).first();
         const seat=me?await db.prepare('SELECT * FROM rw_seats WHERE season=? AND wallet=?').bind(season.id,me.address).first():null;
@@ -61,7 +63,7 @@ export function createApi({season,client:injectedClient,now=Date.now}={}) {
         await limit(db,`auth:${ipHash}`,t,15);
         const data=await body(request);let address;try{address=getAddress(data.address);}catch{reject(400,'Enter a valid wallet address.');}
         const id=crypto.randomUUID(),nonce=crypto.randomUUID().replaceAll('-',''),expires=t+300000;
-        const message=createSiweMessage({address,chainId:CHAIN_ID,domain:new URL(origin).host,uri:origin,version:'1',nonce,issuedAt:new Date(t),expirationTime:new Date(expires),statement:'Sign in to Rare Whales Vector Club. This does not authorize transactions or NFT transfers.'});
+        const message=createSiweMessage({address,chainId:CHAIN_ID,domain:new URL(origin).host,uri:origin+(env.COOKIE_PATH||'/'),version:'1',nonce,issuedAt:new Date(t),expirationTime:new Date(expires),statement:'Sign in to Whale Pools. This proves wallet control only; no transactions or NFT transfers.'});
         await db.batch([
           db.prepare('DELETE FROM rw_challenges WHERE expires<?').bind(t),db.prepare('DELETE FROM rw_sessions WHERE expires<?').bind(t),db.prepare('DELETE FROM rw_limits WHERE expires<?').bind(t),
           db.prepare('INSERT INTO rw_challenges(id,address,message,expires) VALUES (?,?,?,?)').bind(id,address.toLowerCase(),message,expires)
@@ -81,14 +83,15 @@ export function createApi({season,client:injectedClient,now=Date.now}={}) {
         const token=crypto.randomUUID().replaceAll('-','')+crypto.randomUUID().replaceAll('-','');
         if(me)await db.prepare('DELETE FROM rw_sessions WHERE hash=?').bind(me.hash).run();
         await db.prepare('INSERT INTO rw_sessions(hash,address,expires) VALUES (?,?,?)').bind(await digest(token),challenge.address,t+43200000).run();
-        return json({address:challenge.address},200,{'set-cookie':cookie(token,origin)});
+        return json({address:challenge.address},200,{'set-cookie':cookie(token,origin,43200,env.COOKIE_NAME||'rw_session',env.COOKIE_PATH||'/')});
       }
       if(request.method==='POST' && url.pathname==='/api/auth/logout') {
         if(me)await db.prepare('DELETE FROM rw_sessions WHERE hash=?').bind(me.hash).run();
-        return json({ok:true},200,{'set-cookie':cookie('',origin,0)});
+        return json({ok:true},200,{'set-cookie':cookie('',origin,0,env.COOKIE_NAME||'rw_session',env.COOKIE_PATH||'/')});
       }
       if(!me)reject(401,'Connect and sign in with your wallet first.');
       await limit(db,`member:${me.address}`,t,40);
+      if(board)return json(await board.handle({request,db,me,env,data:request.method==='POST'?await body(request):null}));
       if(request.method==='DELETE' && url.pathname==='/api/seat') {
         if(!registrationOpen(season,t))reject(409,'Registration is closed; season entries are fixed.');
         await db.prepare('DELETE FROM rw_seats WHERE wallet=? AND season=?').bind(me.address,season.id).run();

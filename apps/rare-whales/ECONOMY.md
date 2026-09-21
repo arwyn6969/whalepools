@@ -1,3 +1,5 @@
+> **RW-009 current decision · 21 September 2026:** launch the free wallet arcade and defer WWAX. Wax and payment prompts have been removed from the public game. The token remains undeployed, the local launch desk is stopped, and no claim clock has started. The prepared design below is retained for later review; it is not the active launch plan. See [ARCADE.md](ARCADE.md).
+
 # Current decision · 21 September 2026
 
 RW-006 supersedes the earlier free-testnet recommendation below: the owner requested paid non-staking claims and delegated the settings. The prepared version uses 100 WWAX per eligible NFT per 30-day global period for twelve periods, a 0.0001 ETH project fee per NFT, and a full fixed reserve. The deployment wallet is the permanent fee recipient. Claims remain closed until an actual deployment is verified. See [CLAIMS.md](CLAIMS.md) for exact behavior, fee economics and launch steps. Earlier exploration is retained below for context.

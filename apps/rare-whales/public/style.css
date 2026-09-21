@@ -39,3 +39,8 @@
 
 /* Keep loading/failure portraits selectable with the same geometry as the real NFT. */
 .portrait-help{font-size:12px;line-height:1.8;margin:8px 0 20px}.portrait-help .link-button{font-size:6px;margin-left:8px}.wax-utility{margin:30px 0}.wax-utility-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;padding:25px}.wax-utility-grid h3{font-size:9px}.wax-utility-grid p{font-size:14px;line-height:1.8;margin-bottom:0}.wax-utility>.portrait-help{padding:0 25px 12px}@media(max-width:700px){.wax-utility-grid{grid-template-columns:1fr;gap:15px}}
+
+.board-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;padding:24px 22px 10px}.board-metrics span{display:block;font:6px/1.9 Pixel,monospace;margin-bottom:8px}.board-metrics strong{font-size:24px;font-weight:850}.board-replay{margin:5px 22px 22px}.company-meta a{text-decoration:underline;text-underline-offset:3px}.crew-list .panel-title{gap:15px;align-items:start}.crew-list .panel-title>span:first-child{overflow-wrap:anywhere}.crew-list .crew-avatars{flex-wrap:wrap}.crew-list .crew-avatar{max-width:140px}.crew-list .crew-avatar img{width:100%;aspect-ratio:1;object-fit:cover}@media(max-width:700px){.board-metrics{grid-template-columns:1fr 1fr}.board-metrics strong{font-size:24px}.crew-list .panel-title{font-size:8px}.crew-list .panel-title>span:last-child{white-space:nowrap;font-size:6px}}
+
+.crew-list .crew-avatar{width:140px;flex:0 1 140px;max-width:calc(50% - 8px)}.crew-list .crew-avatar span{font:11px/1.6 ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.crew-list .crew-avatar img{height:auto}.crew-list .panel-title>span:first-child{font:8px/1.8 Pixel,monospace}

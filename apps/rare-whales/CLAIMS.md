@@ -1,3 +1,5 @@
+> **RW-009 current decision · 21 September 2026:** launch the free wallet arcade and defer WWAX. Wax and payment prompts have been removed from the public game. The token remains undeployed, the local launch desk is stopped, and no claim clock has started. The prepared design below is retained for later review; it is not the active launch plan. See [ARCADE.md](ARCADE.md).
+
 # WWAX holder-claim launch
 
 RW-007 review · 21 September 2026. Contracts and launch tools are prepared. **No mainnet deployment has been made by this release.** The public payment interface fails closed until an actual deployment transaction is verified and published in `public/deployment.json`.

@@ -1,0 +1,43 @@
+{
+  "id": "whale-pools-arcade-v1",
+  "title": "The historical arcade",
+  "status": "draft",
+  "registrationClosesAt": null,
+  "startsAt": null,
+  "endsAt": null,
+  "initialEquity": 1000,
+  "market": "UBTC / USDC",
+  "venue": "Hyperliquid spot",
+  "chartInterval": "1h",
+  "contextInterval": "4h",
+  "settings": {
+    "equity": 1000,
+    "risk": 0.25,
+    "allocation": 25,
+    "fee": 0.08,
+    "slippage": 0.05
+  },
+  "strategies": [
+    "trend",
+    "recovery",
+    "breakout",
+    "magnet"
+  ],
+  "access": {
+    "confirmed": true,
+    "minimumBalance": 1,
+    "balanceCollections": [
+      "rarewhales",
+      "whalestreet"
+    ],
+    "promoTokenIds": [],
+    "founderWallets": []
+  },
+  "modifierVersion": "whale-dna-v1",
+  "pool": {
+    "budget": 1000,
+    "allocation": "equal",
+    "maxAgents": 12
+  },
+  "tacticVersion": "whale-tactics-v1"
+}
