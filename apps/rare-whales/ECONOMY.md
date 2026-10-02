@@ -1,10 +1,10 @@
 > **RW-009 current decision · 21 September 2026:** launch the free wallet arcade and defer WWAX. Wax and payment prompts have been removed from the public game. The token remains undeployed, the local launch desk is stopped, and no claim clock has started. The prepared design below is retained for later review; it is not the active launch plan. See [ARCADE.md](ARCADE.md).
 
-# Current decision · 21 September 2026
+# Historical paid claim design · RW-006
 
 RW-006 supersedes the earlier free-testnet recommendation below: the owner requested paid non-staking claims and delegated the settings. The prepared version uses 100 WWAX per eligible NFT per 30-day global period for twelve periods, a 0.0001 ETH project fee per NFT, and a full fixed reserve. The deployment wallet is the permanent fee recipient. Claims remain closed until an actual deployment is verified. See [CLAIMS.md](CLAIMS.md) for exact behavior, fee economics and launch steps. Earlier exploration is retained below for context.
 
-# Current integration review · RW-008
+# Historical integration review · RW-008
 
 **The token is prepared, but it is not connected to gameplay or leaderboard calculations.** The static website is live; mainnet deployment and paid claims are still pending. Wallet token balances do not change DNA, tactics, agent budgets, access or replay scores. The fit check has no purchase, ownership, persistence or spending ledger. There is no prospective season recorder or live competitive leaderboard. The frozen claim reserve is entirely allocated to the holder programme, so there is no extra gameplay reward pot.
 
@@ -99,6 +99,6 @@ Illustrative arithmetic only: **1,000 successful paid claims × 0.0001 ETH = 0.1
 
 The surfboard should therefore start as a convenience feature, not a fee-generating harvesting loop: one batch/manual collection flow for the existing allowance, with automation only after its permission and gas-budget model is designed. Holy Brick remains a glowing cosmetic/preset concept; it never improves investment odds.
 
-Current release state: public playable website, browser-local crew choices, inspected historical replays, and visual equipment previews. No WWAX contract/address, minting, claims, balances, equipment ownership, wallet registration, live season leaderboard, staking or live trading has been activated. The on-chain collections exist; this does not make the demo itself an on-chain game.
+Historical release state before RW-009: public playable website, browser-local crew choices, inspected historical replays, and visual equipment previews. No WWAX contract/address, minting, claims, balances, equipment ownership, wallet registration, live season leaderboard, staking or live trading has been activated. The on-chain collections exist; this does not make the demo itself an on-chain game.
 
 Technical sources for this review: [ERC-721 ownership interface](https://eips.ethereum.org/EIPS/eip-721), [OpenZeppelin ERC-20/capped-supply components](https://docs.openzeppelin.com/contracts/5.x/api/token/erc20), [Robinhood Chain network settings](https://docs.robinhood.com/chain/add-network-to-wallet/) and [network gas fees](https://ethereum.org/developers/docs/gas/). Architecture and launch sequencing above are design recommendations, not revenue forecasts or completed implementation.
