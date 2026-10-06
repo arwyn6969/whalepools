@@ -156,3 +156,13 @@ test('existing published companies without revision records load at zero and upg
  const changed=await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Legacy edit'},headers:{'x-whale-revision':0,'x-whale-mutation':crypto.randomUUID()}});assert.equal(changed.status,200);assert.equal(changed.data.revision,1);
  const current=(await f.send('/api/club',{cookie})).data.me;assert.equal(current.seat.id,published.id);assert.equal(current.seat.joinedAt,published.joinedAt);assert.equal(current.seat.nickname,'Legacy edit');assert.equal(current.revision,1);
 });
+
+test('public company destination works beyond the top 100, keeps its ID on edit and becomes unavailable after withdrawal',async t=>{
+ const f=fixture(t),cookie=await f.login();await f.send('/api/seat',{cookie,data:f.input});const seat=(await f.send('/api/club',{cookie})).data.me.seat;
+ for(let i=0;i<101;i++)await f.DB.prepare('INSERT INTO rw_arcade_entries SELECT season,?, ?,nickname,captain_collection,captain_id,agents_json,stats_json,rank_score+1,ownership_block,rule_hash,joined_at,updated_at FROM rw_arcade_entries WHERE id=?').bind('0x'+String(i).padStart(40,'0'),crypto.randomUUID(),seat.id).run();
+ assert.ok(!(await f.send('/api/crew')).data.seats.some(c=>c.id===seat.id));
+ const publicResult=await f.send('/api/company/'+seat.id);assert.equal(publicResult.status,200);assert.equal(publicResult.data.company.rank,102);assert.equal(publicResult.data.arcade.ruleHash,ruleHash);
+ for(const secret of ['mutationId','revision','commit_token','signature','session'])assert.ok(!JSON.stringify(publicResult.data).includes(secret));
+ await f.send('/api/seat',{cookie,data:{...f.input,nickname:'New company name'}});assert.equal((await f.send('/api/company/'+seat.id)).data.company.nickname,'New company name');
+ assert.equal((await f.send('/api/company/not-an-id')).status,404);await f.send('/api/seat',{cookie,method:'DELETE'});assert.equal((await f.send('/api/company/'+seat.id)).status,404);
+});
