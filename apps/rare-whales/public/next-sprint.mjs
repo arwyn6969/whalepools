@@ -16,7 +16,7 @@ export function installNextSprint({asset,api,avatar,hydrateArt,privateResult,ins
  function renderPilot(){
   const {state,unavailable}=pilot.status();$('#pilot-start').hidden=!!state;$('#pilot-report-controls').hidden=!state;$('#pilot-code').disabled=!!state;
   $('#pilot-assistance').checked=state?.assisted??false;$('#pilot-stop').disabled=!state?.active;
-  $('#pilot-status').textContent=unavailable?'Browser storage is unavailable. Reports may not survive a reload; the arcade still works.':state?`${state.code} · ${state.events.length>=500?'report full; export it':state.active?'recording':'stopped'} · ${state.events.length} events · expires ${stamp(state.expiresAt)} UTC. Export before erasing or changing browsers.`:'Recording is off. Join only if the pilot organiser assigned you a participant code.';
+  $('#pilot-status').textContent=unavailable?'Browser storage is unavailable. Reports may not survive a reload; the arcade still works.':state?`${state.code} · ${state.events.length>=500?'report full; export it':state.active?'recording':'stopped'} · ${state.events.length} ${state.events.length===1?'event':'events'} · expires ${stamp(state.expiresAt)} UTC. Export before erasing or changing browsers.`:'Recording is off. Join only if the pilot organiser assigned you a participant code.';
  }
  $('#pilot-start').addEventListener('click',()=>{try{pilot.start($('#pilot-code').value);const ready=walletReady();if(ready.ready)pilot.record(ready.published?'wallet_ready_existing':'wallet_ready_new');renderPilot();}catch(e){$('#pilot-status').textContent=e.message;}});
  $('#pilot-assistance').addEventListener('change',e=>{pilot.assistance(e.target.checked);renderPilot();});
