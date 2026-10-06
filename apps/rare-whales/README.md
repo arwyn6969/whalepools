@@ -96,3 +96,7 @@ RW-009 removes the Wax Lab from the public game. Its earlier fit check was an ep
 ## Holder journey candidate · 6 October 2026
 
 The WP-02/WP-03 candidate is on `codex/holder-company-journey`. Read [HOLDER_JOURNEY_REVIEW.md](docs/HOLDER_JOURNEY_REVIEW.md) for private drafts, inventory recovery, spectator inspection, local previews, fixture browser regressions, migration/rollback notes and the remaining real-wallet acceptance gate. Maintenance PR #1 remains separate; this sprint is not a production release.
+
+## Sharing, challenge and pilot candidate · 6 October 2026
+
+The stacked `codex/share-challenge-pilot` candidate adds stable public company links, historical SVG share cards, private-safe comparisons, the separate Tidal Trio v1 loaner challenge, and optional local pilot reports. Read [NEXT_SPRINT_REVIEW.md](docs/NEXT_SPRINT_REVIEW.md) for checks/limits and [HOLDER_PILOT.md](docs/HOLDER_PILOT.md) for the ten-holder protocol. Production release, real wallet acceptance and observed seven-day adoption remain separate.

@@ -46,6 +46,7 @@ export function createApi({season,client:injectedClient,now=Date.now,board}={}) 
       if(request.method==='GET' && request.headers.get('sec-fetch-site')==='cross-site')reject(403,'Cross-site request refused.');
       const me=await session(request,db,t,env.COOKIE_NAME||'rw_session');
       if(board&&request.method==='GET'&&url.pathname==='/api/club')return json(await board.club(db,me));
+      if(board&&request.method==='GET'&&url.pathname.startsWith('/api/company/'))return json(await board.company(db,url.pathname.slice('/api/company/'.length)));
       if(board&&request.method==='GET'&&url.pathname==='/api/crew')return json(await board.crew(db));
       if(request.method==='GET' && url.pathname==='/api/club') {
         const count=await db.prepare('SELECT COUNT(*) AS n FROM rw_seats WHERE season=?').bind(season.id).first();

@@ -26,6 +26,12 @@ export function createArcadeBoard({season,scores,ruleHash,client:injectedClient,
  return {
   async club(db,me){const row=me?await db.prepare('SELECT e.*,r.revision,r.mutation_id FROM rw_arcade_revisions r LEFT JOIN rw_arcade_entries e ON e.season=r.season AND e.wallet=r.wallet WHERE r.season=? AND r.wallet=?').bind(season.id,me.address).first():null;const legacy=me&&!row?await db.prepare('SELECT * FROM rw_arcade_entries WHERE season=? AND wallet=?').bind(season.id,me.address).first():null;const count=await db.prepare('SELECT COUNT(*) AS n FROM rw_arcade_entries WHERE season=?').bind(season.id).first();return {arcade:meta,season,collections:COLLECTIONS,strategies:STRATEGIES,registrationOpen:true,seats:count.n,me:me?{address:me.address,seat:project(row?.id?row:legacy),revision:row?.revision??0,mutationId:row?.mutation_id??null}:null};},
   async crew(db){const rows=await db.prepare('SELECT *, RANK() OVER (ORDER BY rank_score DESC) AS rank FROM rw_arcade_entries WHERE season=? ORDER BY rank_score DESC,updated_at,id LIMIT 100').bind(season.id).all();const count=await db.prepare('SELECT COUNT(*) AS n FROM rw_arcade_entries WHERE season=?').bind(season.id).first();return {arcade:meta,status:'arcade',hasPerformance:false,total:count.n,seats:rows.results.map(project)};},
+  async company(db,id){
+   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id||''))reject(404,'This public company link is unavailable.');
+   const row=await db.prepare('SELECT * FROM (SELECT *, RANK() OVER (ORDER BY rank_score DESC) AS rank FROM rw_arcade_entries WHERE season=?) WHERE id=?').bind(season.id,id.toLowerCase()).first();
+   if(!row)reject(404,'This company is no longer published. Your private draft is kept.');
+   return {arcade:meta,company:project(row)};
+  },
   async handle({request,db,me,env,data}){
    const path=new URL(request.url).pathname,t=now();
    const mutation=path==='/api/seat'&&['POST','DELETE'].includes(request.method)?mutationFor(request):null;

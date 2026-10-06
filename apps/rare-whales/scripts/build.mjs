@@ -5,6 +5,7 @@ import path from 'node:path';
 import {build} from 'esbuild';
 import {buildArcadeScores} from '../src/arcade-score.mjs';
 import {buildPractice} from '../src/practice.mjs';
+import {buildChallenge} from '../src/challenge.mjs';
 import {validateSeason} from '../src/config.mjs';
 import {compileContracts} from './compile-contracts.mjs';
 import {keccak256} from 'viem';
@@ -30,6 +31,9 @@ for(const file of ['index.html','style.css','whale.avif'])await copyFile(path.jo
 await cp(path.join(app,'public/art'),path.join(app,'build/public/art'),{recursive:true});
 const practice=buildPractice({bars:await load(path.join(repo,'research/data/UBTC-1h.json')),context:await load(path.join(repo,'research/data/UBTC-4h.json')),protocol,sourceHashes:hashes});
 await writeFile(path.join(app,'build/public/practice.json'),JSON.stringify(practice));
+const challenge=await buildChallenge(practice);
+challenge.ruleHash=createHash('sha256').update(JSON.stringify(challenge)+await hash(path.join(app,'src/challenge.mjs'))).digest('hex');
+await writeFile(path.join(app,'build/public/challenge.json'),JSON.stringify(challenge));
 const scores=buildArcadeScores(practice);
 const ruleFiles=['src/dna.mjs','src/pool.mjs','src/tactics.mjs','src/arcade-score.mjs','src/config.mjs','arcade.json'];
 const ruleSources={};for(const name of ruleFiles)ruleSources[name]=await hash(path.join(app,name));

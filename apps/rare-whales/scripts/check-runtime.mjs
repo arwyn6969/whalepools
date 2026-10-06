@@ -13,6 +13,8 @@ try{
  // Production origin is deliberately fixed, so localhost requests need the declared host through dispatchFetch.
  const publicClub=await mf.dispatchFetch('https://arwyn.party/whalepools/api/club');assert.equal(publicClub.status,200);assert.equal((await publicClub.json()).arcade.mode,'arcade');
  const empty=await mf.dispatchFetch('https://arwyn.party/whalepools/api/crew');assert.deepEqual((await empty.json()).seats,[]);
+ const absent=await mf.dispatchFetch('https://arwyn.party/whalepools/api/company/'+crypto.randomUUID());assert.equal(absent.status,404);
+ const invalid=await mf.dispatchFetch('https://arwyn.party/whalepools/api/company/not-a-company');assert.equal(invalid.status,404);
  const blocked=await mf.dispatchFetch('https://arwyn.party/whalepools/api/seat',{method:'POST',headers:{origin:'https://arwyn.party','content-type':'application/json'},body:'{}'});assert.equal(blocked.status,401);
  // Exercise the actual D1 transaction guard with an authenticated fixture
  // session. This covers withdrawal concurrency, not real wallet signing.
@@ -24,7 +26,7 @@ try{
  const removed=await mf.dispatchFetch('https://arwyn.party/whalepools/api/seat',{method:'DELETE',headers:mutationHeaders});assert.equal(removed.status,200);assert.equal((await removed.json()).revision,1);
  const repeated=await mf.dispatchFetch('https://arwyn.party/whalepools/api/seat',{method:'DELETE',headers:mutationHeaders});assert.equal(repeated.status,409);
  const me=(await (await mf.dispatchFetch('https://arwyn.party/whalepools/api/club',{headers:sessionHeaders})).json()).me;assert.equal(me.seat,null);assert.equal(me.revision,1);assert.equal(me.mutationId,mutationId);
- for(const name of ['index.html','app.js','style.css','practice.json','claims.json','whale.avif','art/whalestreet-1.avif','art/wax-tub.svg','art/surfboard.svg','art/holy-brick.svg','art/captain-crown.svg','art/portrait-loading.svg','art/portrait-missing.svg']){
+ for(const name of ['index.html','app.js','style.css','practice.json','challenge.json','claims.json','whale.avif','art/whalestreet-1.avif','art/wax-tub.svg','art/surfboard.svg','art/holy-brick.svg','art/captain-crown.svg','art/portrait-loading.svg','art/portrait-missing.svg']){
   const r=await fetch(new URL('/whalepools/'+name,origin));assert.equal(r.status,200);
   if(name.endsWith('.svg'))assert.equal(r.headers.get('content-type'),'image/svg+xml');
   assert.deepEqual(Buffer.from(await r.arrayBuffer()),await readFile(new URL('../build/public/'+name,import.meta.url)),'HTTP decoded bytes differ for '+name);
