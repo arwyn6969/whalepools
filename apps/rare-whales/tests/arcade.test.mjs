@@ -13,15 +13,26 @@ import {COLLECTIONS} from '../src/config.mjs';
 const read=async path=>JSON.parse(await readFile(new URL(path,import.meta.url)));
 const season=await read('../arcade.json'),practice=buildPractice({bars:await read('../../../research/data/UBTC-1h.json'),context:await read('../../../research/data/UBTC-4h.json'),protocol:await read('../../../dist/protocol.json'),sourceHashes:{}}),scores=buildArcadeScores(practice),ruleHash='test-fixture-rules';
 function fixture(t){
- const owner=privateKeyToAccount(generatePrivateKey()),other=privateKeyToAccount(generatePrivateKey()),DB=database();t.after(()=>DB.close());let time=1000000,chain=4663,nftOwner=owner.address,balance=10n;const reads=[];
- const client={getChainId:async()=>chain,getBlockNumber:async()=>100n,verifyMessage:async args=>verifyMessage(args),readContract:async p=>{reads.push(p);return p.functionName==='ownerOf'?nftOwner:balance;}};
+ const owner=privateKeyToAccount(generatePrivateKey()),other=privateKeyToAccount(generatePrivateKey()),DB=database();t.after(()=>DB.close());let time=1000000,chain=4663,nftOwner=owner.address,balance=10n,beforeRead=async()=>{};const reads=[],wallets=new Map();
+ const client={getChainId:async()=>chain,getBlockNumber:async()=>100n,verifyMessage:async args=>verifyMessage(args),readContract:async p=>{reads.push(p);await beforeRead(p);return p.functionName==='ownerOf'?nftOwner:balance;}};
  const board=createArcadeBoard({season,scores,ruleHash,client,now:()=>time}),api=createApi({season,board,client,now:()=>time}),origin='https://arcade.test',env={DB,APP_ORIGIN:origin,COOKIE_NAME:'wp_arcade_session',COOKIE_PATH:'/whalepools/'};
- const send=async(path,{data,cookie,method=data?'POST':'GET',requestOrigin=origin}={})=>{const r=await api(new Request(origin+path,{method,headers:{origin:requestOrigin,...(cookie?{cookie}:{}),...(data?{'content-type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})}),env);return {status:r.status,headers:r.headers,data:await r.json()};};
+ const send=async(path,{data,cookie,method=data?'POST':'GET',requestOrigin=origin,headers={}}={})=>{
+  let mutationHeaders={};
+  if(path==='/api/seat'&&['POST','DELETE'].includes(method)&&wallets.has(cookie)){
+   const current=await DB.prepare('SELECT revision FROM rw_arcade_revisions WHERE season=? AND wallet=?').bind(season.id,wallets.get(cookie)).first();
+   mutationHeaders={'x-whale-revision':String(current?.revision??0),'x-whale-mutation':crypto.randomUUID()};
+  }
+  const requestHeaders=new Headers({origin:requestOrigin,...(cookie?{cookie}:{}),...(data?{'content-type':'application/json'}:{}),...mutationHeaders});
+  for(const [name,value]of Object.entries(headers)){if(value===null)requestHeaders.delete(name);else requestHeaders.set(name,String(value));}
+  const r=await api(new Request(origin+path,{method,headers:requestHeaders,...(data?{body:JSON.stringify(data)}:{})}),env);return {status:r.status,headers:r.headers,data:await r.json()};
+ };
  const challenge=async(who=owner)=>{const r=await send('/api/auth/challenge',{data:{address:who.address}});assert.equal(r.status,200);return {...r.data,signature:await who.signMessage({message:r.data.message})};};
- const login=async(who=owner)=>{const proof=await challenge(who),r=await send('/api/auth/verify',{data:proof});assert.equal(r.status,200);return r.headers.get('set-cookie');};
+ const login=async(who=owner)=>{const proof=await challenge(who),r=await send('/api/auth/verify',{data:proof});assert.equal(r.status,200);const cookie=r.headers.get('set-cookie');wallets.set(cookie,who.address.toLowerCase());return cookie;};
  const input={nickname:'Test crew',collection:'rarewhales',tokenId:1,strategy:'trend',publish:true,ruleHash,agents:[{collection:'rarewhales',tokenId:1,strategy:'trend'},{collection:'whalestreet',tokenId:2,strategy:'magnet'}]};
- return {owner,other,DB,send,challenge,login,input,reads,setOwner:v=>nftOwner=v,setTime:v=>time=v,setChain:v=>chain=v,setBalance:v=>balance=v};
+ return {owner,other,DB,send,challenge,login,input,reads,setOwner:v=>nftOwner=v,setTime:v=>time=v,setChain:v=>chain=v,setBalance:v=>balance=v,setBeforeRead:v=>beforeRead=v};
 }
+function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};}
+function holdNextOwnership(f){const started=deferred(),release=deferred();let held=false;f.setBeforeRead(async p=>{if(p.functionName==='ownerOf'&&!held){held=true;started.resolve();await release.promise;}});return {started:started.promise,release:release.resolve};}
 test('compressed score table preserves every original equity point and trade input across all 1296 paths',()=>{
  assert.equal(Object.keys(scores.runs).length,1296);
  for(const [key,stored]of Object.entries(scores.runs)){
@@ -70,4 +81,78 @@ test('one latest entry per wallet, shared tie ranks, ownership snapshots on tran
 test('free arcade needs the configured NFT balance and rate limits unauthenticated challenges',async t=>{
  const f=fixture(t),cookie=await f.login();f.setBalance(0n);assert.equal((await f.send('/api/seat',{cookie,data:f.input})).status,403);f.setBalance(BigInt(season.access.minimumBalance));assert.equal((await f.send('/api/seat',{cookie,data:f.input})).status,200);
  let status;for(let i=0;i<20;i++)status=(await f.send('/api/auth/challenge',{data:{address:f.owner.address}})).status;assert.equal(status,429);
+});
+
+test('publish and withdrawal require a valid saved-entry revision and mutation ID; eligibility does not',async t=>{
+ const f=fixture(t),cookie=await f.login();
+ const initial=(await f.send('/api/club',{cookie})).data.me;assert.equal(initial.revision,0);assert.equal(initial.mutationId,null);
+ for(const method of ['POST','DELETE']){
+  const options={cookie,method,...(method==='POST'?{data:f.input}:{})};
+  for(const headers of [{'x-whale-revision':null},{'x-whale-mutation':null},{'x-whale-revision':'01'},{'x-whale-revision':'-1'},{'x-whale-revision':'1.5'},{'x-whale-revision':String(Number.MAX_SAFE_INTEGER)},{'x-whale-mutation':'not-a-uuid'}]){
+   const r=await f.send('/api/seat',{...options,headers});assert.equal(r.status,400);assert.match(r.data.error,/Reload your company/);
+  }
+ }
+ assert.equal((await f.send('/api/eligibility',{cookie,data:f.input})).status,200);
+ assert.equal((await f.send('/api/club',{cookie})).data.me.revision,0);
+});
+
+test('mutation receipts distinguish unchanged-payload publication and survive withdrawal privately',async t=>{
+ const f=fixture(t),cookie=await f.login(),first=crypto.randomUUID(),second=crypto.randomUUID(),removal=crypto.randomUUID();
+ const publish=await f.send('/api/seat',{cookie,data:f.input,headers:{'x-whale-revision':0,'x-whale-mutation':first}});
+ assert.equal(publish.status,200);assert.equal(publish.data.revision,1);assert.equal(publish.data.mutationId,first);
+ let me=(await f.send('/api/club',{cookie})).data.me;assert.equal(me.revision,1);assert.equal(me.mutationId,first);
+ const unchanged=await f.send('/api/seat',{cookie,data:f.input,headers:{'x-whale-revision':1,'x-whale-mutation':second}});
+ assert.equal(unchanged.status,200);me=(await f.send('/api/club',{cookie})).data.me;assert.equal(me.revision,2);assert.equal(me.mutationId,second);assert.equal(me.seat.nickname,f.input.nickname);
+ const remove=await f.send('/api/seat',{cookie,method:'DELETE',headers:{'x-whale-revision':2,'x-whale-mutation':removal}});
+ assert.equal(remove.status,200);assert.equal(remove.data.revision,3);
+ me=(await f.send('/api/club',{cookie})).data.me;assert.equal(me.seat,null);assert.equal(me.revision,3);assert.equal(me.mutationId,removal);assert.equal(Object.hasOwn(me,'commit_token'),false);
+ const tombstone=await f.DB.prepare('SELECT revision FROM rw_arcade_revisions WHERE season=? AND wallet=?').bind(season.id,f.owner.address.toLowerCase()).first();assert.equal(tombstone.revision,3);
+ assert.equal(JSON.stringify((await f.send('/api/crew')).data).includes(removal),false);
+});
+
+test('late ownership responses cannot overwrite a newer company mutation',async t=>{
+ const f=fixture(t),cookie=await f.login(),gate=holdNextOwnership(f),oldId=crypto.randomUUID();
+ const old=f.send('/api/seat',{cookie,data:{...f.input,nickname:'Slow company'},headers:{'x-whale-revision':0,'x-whale-mutation':oldId}});
+ await gate.started;
+ const newest=await f.send('/api/seat',{cookie,data:{...f.input,nickname:'New company'},headers:{'x-whale-revision':0,'x-whale-mutation':crypto.randomUUID()}});assert.equal(newest.status,200);
+ gate.release();assert.equal((await old).status,409);
+ const me=(await f.send('/api/club',{cookie})).data.me;assert.equal(me.seat.nickname,'New company');assert.equal(me.revision,1);assert.equal(me.mutationId,newest.data.mutationId);
+});
+
+test('two concurrent absent-entry creates based on revision zero have exactly one winner',async t=>{
+ const f=fixture(t),cookie=await f.login();
+ const attempts=await Promise.all(['First crew','Second crew'].map(nickname=>f.send('/api/seat',{cookie,data:{...f.input,nickname},headers:{'x-whale-revision':0,'x-whale-mutation':crypto.randomUUID()}})));
+ assert.deepEqual(attempts.map(r=>r.status).sort(),[200,409]);
+ assert.equal((await f.send('/api/crew')).data.total,1);assert.equal((await f.send('/api/club',{cookie})).data.me.revision,1);
+});
+
+test('withdrawal tombstone prevents a slow old create from recreating a removed company',async t=>{
+ const f=fixture(t),cookie=await f.login(),gate=holdNextOwnership(f);
+ const old=f.send('/api/seat',{cookie,data:{...f.input,nickname:'Old slow create'},headers:{'x-whale-revision':0,'x-whale-mutation':crypto.randomUUID()}});
+ await gate.started;
+ assert.equal((await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Current company'}})).status,200);
+ assert.equal((await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Edited company'}})).status,200);
+ assert.equal((await f.send('/api/seat',{cookie,method:'DELETE'})).status,200);
+ gate.release();assert.equal((await old).status,409);
+ const me=(await f.send('/api/club',{cookie})).data.me;assert.equal(me.seat,null);assert.equal(me.revision,3);assert.equal((await f.send('/api/crew')).data.total,0);
+ assert.equal((await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Fresh company'}})).status,200);assert.equal((await f.send('/api/club',{cookie})).data.me.revision,4);
+});
+
+test('replaying an accepted mutation cannot execute a second write or replace its payload',async t=>{
+ const f=fixture(t),cookie=await f.login(),id=crypto.randomUUID(),headers={'x-whale-revision':0,'x-whale-mutation':id};
+ const accepted=await f.send('/api/seat',{cookie,data:f.input,headers});assert.equal(accepted.status,200);
+ assert.equal((await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Forged replay'},headers})).status,409);
+ assert.equal((await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Reused ID'},headers:{...headers,'x-whale-revision':1}})).status,409);
+ assert.equal((await f.send('/api/seat',{cookie,method:'DELETE',headers})).status,409);
+ const me=(await f.send('/api/club',{cookie})).data.me;assert.equal(me.seat.nickname,f.input.nickname);assert.equal(me.revision,1);assert.equal(me.mutationId,id);
+});
+
+test('existing published companies without revision records load at zero and upgrade on their next edit',async t=>{
+ const f=fixture(t),cookie=await f.login();assert.equal((await f.send('/api/seat',{cookie,data:f.input})).status,200);
+ const published=(await f.send('/api/club',{cookie})).data.me.seat;
+ // Emulate an entry created before migration 0004, which has no revision row.
+ await f.DB.prepare('DELETE FROM rw_arcade_revisions WHERE season=? AND wallet=?').bind(season.id,f.owner.address.toLowerCase()).run();
+ const legacy=(await f.send('/api/club',{cookie})).data.me;assert.deepEqual(legacy.seat,published);assert.equal(legacy.revision,0);assert.equal(legacy.mutationId,null);
+ const changed=await f.send('/api/seat',{cookie,data:{...f.input,nickname:'Legacy edit'},headers:{'x-whale-revision':0,'x-whale-mutation':crypto.randomUUID()}});assert.equal(changed.status,200);assert.equal(changed.data.revision,1);
+ const current=(await f.send('/api/club',{cookie})).data.me;assert.equal(current.seat.id,published.id);assert.equal(current.seat.joinedAt,published.joinedAt);assert.equal(current.seat.nickname,'Legacy edit');assert.equal(current.revision,1);
 });

@@ -92,3 +92,7 @@ The Tactic Arcade compares all four tactics for the selected whale, using the sa
 The Wax Lab uses original SVG pixel illustrations for a 90s-inspired Whale Wax surf tub, upright surfboard, neon-green Holy Brick of Kek and gemmed crown. Rebuild the art with `node scripts/draw-wax-art.mjs`. These are original game illustrations, not copied surf-wax packaging.
 
 RW-009 removes the Wax Lab from the public game. Its earlier fit check was an ephemeral visual preview of Surfboard, Holy Brick of Kek and Captain’s Drip. None is purchasable or minted. A historical arcade leaderboard is available; prospective season and ENS displays remain planned. Public owners are verified wallet addresses, never guessed ENS names. See [ECONOMY.md](ECONOMY.md) for the staking review, weak spots, build order and effort estimates.
+
+## Holder journey candidate · 6 October 2026
+
+The WP-02/WP-03 candidate is on `codex/holder-company-journey`. Read [HOLDER_JOURNEY_REVIEW.md](docs/HOLDER_JOURNEY_REVIEW.md) for private drafts, inventory recovery, spectator inspection, local previews, fixture browser regressions, migration/rollback notes and the remaining real-wallet acceptance gate. Maintenance PR #1 remains separate; this sprint is not a production release.

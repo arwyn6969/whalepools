@@ -16,8 +16,8 @@ export function discoverWallets(target){
   return [...new Set(providers)].filter(p=>typeof p?.request==='function').map((provider,i)=>({id:'legacy-'+i,name:providers.length>1?`Browser wallet ${i+1} (legacy)`:'Browser wallet (legacy)',rdns:'Name unavailable — check which extension opens',provider}));
  }};
 }
-export function createWalletPicker(target,doc){
- const wallets=discoverWallets(target);let pending;
+export function createWalletPicker(target,doc,{wallets=discoverWallets(target)}={}){
+ let pending;
  const dialog=doc.createElement('dialog');dialog.className='wallet-picker';dialog.setAttribute('aria-labelledby','wallet-picker-title');
  dialog.innerHTML='<h2 id="wallet-picker-title">CHOOSE YOUR WALLET</h2><p>Select the extension you want to sign in with. No transaction or payment.</p><div class="wallet-options"></div><p class="wallet-help" role="status"></p><button type="button" class="link-button wallet-rescan">REFRESH WALLETS ↻</button><button type="button" class="pixel-button yellow wallet-cancel">CANCEL</button>';
  doc.body.append(dialog);
