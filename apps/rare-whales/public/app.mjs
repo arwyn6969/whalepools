@@ -9,6 +9,7 @@ import {inventoryItems,retainOwned,chooseCaptain} from './owned-crew.mjs';
 import {loadDraft,saveDraft} from './company-draft.mjs';
 import {requestJSON,boundedRequest} from './request.mjs';
 import {installNextSprint} from './next-sprint.mjs';
+import {installFleetSocial} from './fleet-social.mjs';
 import {installPaper} from './paper.mjs';
 const walletDiscovery=discoverWallets(window);
 const pickWallet=createWalletPicker(window,document,{wallets:walletDiscovery});
@@ -32,7 +33,9 @@ try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=v
 let crewWallet=null,crewRules=null,ownedWhales=[],ownedLoaded=false,ownedLoading=false,ownedError='',inventoryRevision=0,inventoryController,inventoryProgress='',spectator=null,draftResult=null,draftStorageStatus='',uncertainAction=null;
 let walletController=new AbortController(),logoutPending=Promise.resolve();
 const nextSprint=installNextSprint({asset,api,avatar,hydrateArt,privateResult:()=>draftResult,inspectCompany,walletReady:()=>({ready:walletReady&&ownedLoaded&&ownedWhales.length>0,published:!!club?.me?.seat})});
-const paper=installPaper({api,asset,avatar,hydrateArt,context:()=>({address:club?.me?.address??null,ready:walletReady&&ownedLoaded,whales:ownedWhales})});
+const liveContext=()=>({address:club?.me?.address??null,ready:walletReady&&ownedLoaded,whales:ownedWhales});
+const live=installFleetSocial({api,context:liveContext});
+const paper=installPaper({api,asset,avatar,hydrateArt,context:liveContext,social:live});
 const displayedRoster=()=>spectator?.agents||roster;
 const draftStorage={getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)};
 const watchedProviders=new WeakSet();
@@ -93,11 +96,12 @@ function leaveSpectator(){
 }
 function message(text){$('#global-message').textContent=text;$('#global-message').hidden=!text;}
 function route(){
- const hash=location.hash.slice(1),current=hash==='paper'||hash.startsWith('paper/')?'paper':hash.startsWith('company/')?'company':['seat','crew','challenge','pilot'].includes(hash)?hash:'practice';
+ const hash=location.hash.slice(1),current=hash==='paper'||hash.startsWith('paper/')?'paper':hash==='tide'||hash.startsWith('tide/')?'tide':hash.startsWith('company/')?'company':['seat','crew','challenge','pilot','live-pilot'].includes(hash)?hash:'practice';
  paper.route(current==='paper',hash.startsWith('paper/')?hash.slice(6):null);
+ live.route(current,hash.startsWith('paper/')?hash.slice(6):hash.startsWith('tide/')?hash.slice(5):null);
  nextSprint.cancelCompany();if(current==='company')nextSprint.openCompany(hash.slice('company/'.length));
  if(current==='challenge')nextSprint.loadChallenge();
- if(['company','challenge','pilot'].includes(current)||hash==='practice')leaveSpectator();
+ if(['company','challenge','pilot','paper','tide','live-pilot'].includes(current)||hash==='practice')leaveSpectator();
  for(const section of document.querySelectorAll('.page'))section.hidden=section.id!==current;
  for(const link of document.querySelectorAll('nav a')){if(link.dataset.page===current)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');}
  if(current==='crew')loadCrew();
@@ -198,7 +202,7 @@ for(const id of ['owned-whale','add-owned'])$('#'+id).addEventListener('change',
 $('#refresh-whales').addEventListener('click',()=>{if(!busy)loadOwnedWhales();});
 $('#registration-roster').addEventListener('click',event=>{const remove=event.target.closest('[data-crew-remove]');if(remove&&!busy){roster=roster.filter(a=>key(a)!==remove.dataset.crewRemove);rosterChanged();}});
 function renderOwnedWhales(){
- paper.sync();
+ live.sync();paper.sync();
  const signedIn=!!club?.me,available=ownedWhales.filter(a=>!roster.some(b=>key(b)===key(a)));
  $('#manual-whale-fields').hidden=signedIn;$('#owned-add-label').hidden=!signedIn;$('#add-token').required=!signedIn;$('#add-token').disabled=signedIn;
  $('#add-submit').textContent=signedIn?'ADD TO CREW':'ADD TO SANDBOX';$('#add-submit').disabled=busy||signedIn&&(!ownedLoaded||ownedLoading||!available.length||roster.length>=MAX_AGENTS);
@@ -251,7 +255,7 @@ async function loadOwnedWhales(){
   const retained=retainOwned(roster,ownedWhales),removed=roster.length-retained.length;
   if(removed){roster=retained;$('#seat-message').textContent=`${removed} ${removed===1?'whale is':'whales are'} no longer in this wallet and removed from the private crew. Your public entry stays unchanged until you publish.`;rosterChanged();}
  }catch(e){
-  if(revision===inventoryRevision&&e.name!=='AbortError'){ownedLoaded=false;const reason=e.name==='TimeoutError'?'Loading took too long.':/wrong network/.test(e.message)?'The inventory service returned another network.':/history|balance|ownership/.test(e.message)?'Your wallet history could not be fully verified.':'The inventory service is unavailable.';nextSprint.pilotEvent('inventory_error');ownedError=`${reason} Your draft is kept. Refresh your whales to try again.`;}
+  if(revision===inventoryRevision&&e.name!=='AbortError'){ownedLoaded=false;const reason=e.name==='TimeoutError'?'Loading took too long.':/wrong network/.test(e.message)?'The inventory service returned another network.':/history|balance|ownership/.test(e.message)?'Your wallet history could not be fully verified.':'The inventory service is unavailable.';nextSprint.pilotEvent('inventory_error');live.inventoryError();ownedError=`${reason} Your draft is kept. Refresh your whales to try again.`;}
  }finally{if(revision===inventoryRevision){ownedLoading=false;renderOwnedWhales();updateRegistrationRoster();renderJourney();}}
 }
 $('#download').addEventListener('click',()=>{

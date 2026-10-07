@@ -8,11 +8,13 @@ const localAuth=process.env.RW_LOCAL_AUTH==='1';
 const module=await import(localAuth?'../build/worker.mjs':'../build/launch-worker.mjs'),worker=module.default;
 await mkdir(path.join(app,'work'),{recursive:true});
 const paperEnabled=process.env.RW_PAPER==='1';
-const DB=database(path.join(app,'work',paperEnabled?'paper.sqlite':localAuth?'club.sqlite':'arcade.sqlite'));
+const filename=paperEnabled?(process.env.RW_PAPER_DB||'paper.sqlite'):localAuth?'club.sqlite':'arcade.sqlite';
+if(!/^[a-z0-9-]+\.sqlite$/.test(filename))throw Error('Use a local work database filename.');
+const DB=database(path.join(app,'work',filename));
 const port=Number(process.env.RW_PORT||48372),origin=`http://127.0.0.1:${port}`;
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.avif':'image/avif','.svg':'image/svg+xml','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
 const ASSETS={async fetch(request){let name=new URL(request.url).pathname;if(name==='/')name='/index.html';try{const data=await readFile(path.join(app,'build/public',name));return new Response(request.method==='HEAD'?null:data,{headers:{'content-type':types[path.extname(name)]||'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}}};
-const env={DB,ASSETS,APP_ORIGIN:origin,BASE_PATH:process.env.RW_BASE_PATH||'',PAPER_ENABLED:paperEnabled?'1':'0'};
+const env={DB,ASSETS,APP_ORIGIN:origin,BASE_PATH:process.env.RW_BASE_PATH||'',PAPER_ENABLED:paperEnabled?'1':'0',TIDE_ENABLED:process.env.RW_TIDE==='1'?'1':'0'};
 let recording=Promise.resolve(),recordingBusy=false;
 async function record(){if(recordingBusy||!paperEnabled)return;recordingBusy=true;try{console.log(JSON.stringify({event:'local-paper-tick',...await module.launchTick(env)}));}catch(e){console.error('Paper recorder failed: '+e.message);}finally{recordingBusy=false;}}
 const timer=paperEnabled?setInterval(()=>{recording=record();},60000):null;

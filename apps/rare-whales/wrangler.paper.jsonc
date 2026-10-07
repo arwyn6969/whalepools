@@ -10,5 +10,5 @@
  "triggers":{"crons":["* * * * *"]},
  // Isolated resource: never substitute the production arcade database ID.
  "d1_databases":[{"binding":"DB","database_name":"whale-pools-paper-staging","database_id":"7e7532e6-891f-4b29-bd80-752a1e311642","migrations_dir":"migrations"}],
- "vars":{"BASE_PATH":"/whalepools","PAPER_ENABLED":"1","APP_ORIGIN":"https://whale-pools-paper-staging.mrarwyn.workers.dev","RPC_URL":"https://robinhood.drpc.org"}
+ "vars":{"BASE_PATH":"/whalepools","PAPER_ENABLED":"1","TIDE_ENABLED":"1","APP_ORIGIN":"https://whale-pools-paper-staging.mrarwyn.workers.dev","RPC_URL":"https://robinhood.drpc.org"}
 }

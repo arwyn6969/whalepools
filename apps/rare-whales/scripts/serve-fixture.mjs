@@ -8,6 +8,8 @@ import {decodeFunctionData, encodeAbiParameters, keccak256, stringToHex, verifyM
 import {createApi} from '../src/api.mjs';
 import {createArcadeBoard} from '../src/arcade-board.mjs';
 import {createPaperService,tickPaper} from '../src/paper-service.mjs';
+import {createFleetSocialService} from '../src/fleet-social-service.mjs';
+import {tickTide} from '../src/daily-tide.mjs';
 import {PAPER_RULES} from '../src/paper-engine.mjs';
 import {COLLECTIONS, CHAIN_ID} from '../src/config.mjs';
 import {database} from './database.mjs';
@@ -52,14 +54,18 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
   state.paperNow=Math.floor(Date.now()/PAPER_RULES.interval)*PAPER_RULES.interval+1000;
   const anchor=state.paperNow-PAPER_RULES.interval;
   const paper=createPaperService({season,client,rulesHash:paperRules.ruleHash,now:()=>state.paperNow});
-  const api = createApi({season, client, board, paper});
+  const tideRules=JSON.parse(await readFile(path.join(app,'build/public/tide-rules.json'),'utf8'));
+  const social=createFleetSocialService({season,client,tideHash:tideRules.ruleHash,paperHash:paperRules.ruleHash,now:()=>state.paperNow});
+  const api = createApi({season, client, board, paper,social});
   async function paperTick({advance=0,error=false}={}){
     state.paperNow+=advance*PAPER_RULES.interval;
-    return tickPaper({DB:db,PAPER_ENABLED:'1'},{rulesHash:paperRules.ruleHash,now:state.paperNow,market:async()=>{
+    const result=await tickPaper({DB:db,PAPER_ENABLED:'1'},{rulesHash:paperRules.ruleHash,now:state.paperNow,market:async()=>{
       if(error)throw Error('Fixture market outage.');
       const latest=Math.floor(state.paperNow/PAPER_RULES.interval)*PAPER_RULES.interval-PAPER_RULES.interval;
       return {coin:'@fixture',bars:Array.from({length:100},(_,i)=>{const t=latest-(99-i)*PAPER_RULES.interval,p=200+(t-anchor)/PAPER_RULES.interval*.2;return {t,o:p,h:p+.05,l:p-.05,c:p};})};
     }});
+    const tide=await tickTide({DB:db,PAPER_ENABLED:'1',TIDE_ENABLED:'1'},{rulesHash:tideRules.ruleHash,paperHash:paperRules.ruleHash,now:state.paperNow});
+    return {...result,tide};
   }
   if(paperEnabled)await paperTick();
   await board.handle({request: new Request('http://fixture.invalid/api/seat', {method: 'POST', headers: {'x-whale-revision': '0', 'x-whale-mutation': crypto.randomUUID()}}), db, me: {address: walletByName.rival}, data: {agents: FIXTURE_HOLDINGS.rival.map((a, i) => ({...a, strategy: i ? 'magnet' : 'breakout'})), collection: 'rarewhales', tokenId: 901, nickname: 'The Fixture Rival', publish: true, ruleHash: scores.ruleHash}});
@@ -112,7 +118,7 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
         if (state.responseDelayMs && pathname === state.delayPath) await sleep(state.responseDelayMs);
         const request = new Request(origin + req.url, {method: req.method, headers: req.headers, ...(!['GET', 'HEAD'].includes(req.method) ? {body} : {})});
         if (pathname === '/api/seat' && req.method !== 'GET' && state.writeMode === 'reject') return send(503, {error: 'Fixture ownership check unavailable. Your published company has not changed.'}, {'content-type': 'application/json'});
-        const response = await api(request, {DB: db, APP_ORIGIN: origin,PAPER_ENABLED:paperEnabled?'1':'0'});
+        const response = await api(request, {DB: db, APP_ORIGIN: origin,PAPER_ENABLED:paperEnabled?'1':'0',TIDE_ENABLED:paperEnabled?'1':'0'});
         if (pathname === '/api/seat' && req.method === 'POST' && state.writeMode === 'unknown') {res.destroy(); return;}
         let responseBody = Buffer.from(await response.arrayBuffer());
         if (pathname === '/api/club' && state.reverseEntries && response.status === 200) {

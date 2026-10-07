@@ -13,7 +13,7 @@
     "deploy:check": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
     "build:demo": "npm run build && node scripts/bundle-demo.mjs && node scripts/check-demo.mjs",
-    "test:runtime": "node scripts/check-runtime.mjs && node scripts/check-paper-runtime.mjs",
+    "test:runtime": "node scripts/check-runtime.mjs && node scripts/check-paper-runtime.mjs && node scripts/check-social-runtime.mjs",
     "contracts:build": "node scripts/compile-contracts.mjs",
     "contracts:test": "node scripts/test-contracts.mjs",
     "launch:prepare": "npm run contracts:build && node scripts/prepare-launch.mjs",
@@ -21,6 +21,8 @@
     "launch:verify": "node scripts/verify-launch.mjs",
     "contracts:test:fork": "node scripts/test-fork.mjs",
     "test:paper:browser": "node --experimental-sqlite scripts/check-paper.mjs",
+    "test:social:browser": "node --experimental-sqlite scripts/check-social.mjs",
+    "pilot:live:readout": "node scripts/live-pilot-readout.mjs",
     "paper:research": "node scripts/paper-research.mjs"
   },
   "dependencies": {
