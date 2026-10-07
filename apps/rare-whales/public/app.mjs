@@ -9,6 +9,7 @@ import {inventoryItems,retainOwned,chooseCaptain} from './owned-crew.mjs';
 import {loadDraft,saveDraft} from './company-draft.mjs';
 import {requestJSON,boundedRequest} from './request.mjs';
 import {installNextSprint} from './next-sprint.mjs';
+import {installPaper} from './paper.mjs';
 const walletDiscovery=discoverWallets(window);
 const pickWallet=createWalletPicker(window,document,{wallets:walletDiscovery});
 const $=s=>document.querySelector(s);
@@ -31,6 +32,7 @@ try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=v
 let crewWallet=null,crewRules=null,ownedWhales=[],ownedLoaded=false,ownedLoading=false,ownedError='',inventoryRevision=0,inventoryController,inventoryProgress='',spectator=null,draftResult=null,draftStorageStatus='',uncertainAction=null;
 let walletController=new AbortController(),logoutPending=Promise.resolve();
 const nextSprint=installNextSprint({asset,api,avatar,hydrateArt,privateResult:()=>draftResult,inspectCompany,walletReady:()=>({ready:walletReady&&ownedLoaded&&ownedWhales.length>0,published:!!club?.me?.seat})});
+const paper=installPaper({api,asset,avatar,hydrateArt,context:()=>({address:club?.me?.address??null,ready:walletReady&&ownedLoaded,whales:ownedWhales})});
 const displayedRoster=()=>spectator?.agents||roster;
 const draftStorage={getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)};
 const watchedProviders=new WeakSet();
@@ -91,7 +93,8 @@ function leaveSpectator(){
 }
 function message(text){$('#global-message').textContent=text;$('#global-message').hidden=!text;}
 function route(){
- const hash=location.hash.slice(1),current=hash.startsWith('company/')?'company':['seat','crew','challenge','pilot'].includes(hash)?hash:'practice';
+ const hash=location.hash.slice(1),current=hash==='paper'||hash.startsWith('paper/')?'paper':hash.startsWith('company/')?'company':['seat','crew','challenge','pilot'].includes(hash)?hash:'practice';
+ paper.route(current==='paper',hash.startsWith('paper/')?hash.slice(6):null);
  nextSprint.cancelCompany();if(current==='company')nextSprint.openCompany(hash.slice('company/'.length));
  if(current==='challenge')nextSprint.loadChallenge();
  if(['company','challenge','pilot'].includes(current)||hash==='practice')leaveSpectator();
@@ -195,6 +198,7 @@ for(const id of ['owned-whale','add-owned'])$('#'+id).addEventListener('change',
 $('#refresh-whales').addEventListener('click',()=>{if(!busy)loadOwnedWhales();});
 $('#registration-roster').addEventListener('click',event=>{const remove=event.target.closest('[data-crew-remove]');if(remove&&!busy){roster=roster.filter(a=>key(a)!==remove.dataset.crewRemove);rosterChanged();}});
 function renderOwnedWhales(){
+ paper.sync();
  const signedIn=!!club?.me,available=ownedWhales.filter(a=>!roster.some(b=>key(b)===key(a)));
  $('#manual-whale-fields').hidden=signedIn;$('#owned-add-label').hidden=!signedIn;$('#add-token').required=!signedIn;$('#add-token').disabled=signedIn;
  $('#add-submit').textContent=signedIn?'ADD TO CREW':'ADD TO SANDBOX';$('#add-submit').disabled=busy||signedIn&&(!ownedLoaded||ownedLoading||!available.length||roster.length>=MAX_AGENTS);
