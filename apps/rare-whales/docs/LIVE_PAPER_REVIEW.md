@@ -24,7 +24,7 @@ The current latest-record selector does not offer an archive list of every previ
 
 Signals need 51 continuous five-minute candles. EMA computation uses up to the latest 100 candles. These are simplified archetypes, distinct from same-named historical tactics. They do not reproduce a famous investor's system or use an LLM to place orders.
 
-Market: actual Hyperliquid **spot UBTC / USDC**, resolved from spot metadata (observed `@142`). The scheduled server checks once a minute; the browser refreshes the display every 30 seconds. This is forward trading on completed five-minute data, not tick streaming. The recorder and executor continue without an open browser on staging. Local execution continues while the local server process runs.
+Market: actual Hyperliquid **spot UBTC / USDC**, resolved from spot metadata (observed `@142`). The scheduled server checks once a minute; the browser refreshes the display every 30 seconds. This is forward trading on completed five-minute data, not tick streaming. The staging cron is configured to run independently of the browser, but remote delivery has not been established: no attempt was recorded as of 7 October 13:28 UTC. Local execution continues while the local server process runs, and actual neutral watches survive a same-rules restart.
 
 A signal observed after a completed candle queues a simulated order. It fills at the **next timely observed completed candle's close**, with 0.08% modeled fees and 0.05% modeled slippage per side. Timing uses data receipt time. Stops/targets use closes and queue the next close; there are no intrabar/order-book fills. No leverage, shorting, deposits, token actions or real orders exist.
 
@@ -62,7 +62,7 @@ Cash ended $1,000; the 25% passive reference ended $993.97. All three presets lo
 
 ## Preview and verification
 
-Public isolated staging: https://whale-pools-paper-staging.mrarwyn.workers.dev/whalepools/#paper
+Public isolated staging (assets/API verified; cron startup pending, so holder Start is unavailable): https://whale-pools-paper-staging.mrarwyn.workers.dev/whalepools/#paper
 
 Local real-market preview: http://127.0.0.1:48377/whalepools/#paper
 
@@ -83,7 +83,7 @@ RW_PAPER=1 RW_PORT=48377 RW_BASE_PATH=/whalepools npm run dev
 RW_PAPER_FIXTURE=1 RW_FIXTURE_PORT=48378 node --experimental-sqlite scripts/serve-fixture.mjs
 ```
 
-120 unit/integration tests pass. The 21-asset build verifies frozen source/data checksums and every embedded asset byte. Actual workerd/D1 checks cover the recorder, atomic ledger, repeated ticks, public API, full 20-holder/12-whale fixture capacity, session-bound Stop and rejected origin/anonymous writes. These use market/wallet fixtures. Fourteen holder, eleven sharing/challenge/pilot and eleven paper browser scenarios pass; desktop 1440×1000 and mobile 390×844 have no uncaught errors. Deterministic regressions use explicit remote-artwork fallbacks. Normal in-app browser checks load all three preset portraits from real sources and report no captured warning/error logs. In-app compact viewport dimensions are recorded separately from the exact 390-pixel fixture test.
+120 unit/integration tests pass. The 21-asset build verifies frozen source/data checksums and every embedded asset byte. Actual workerd/D1 checks cover the recorder, atomic ledger, repeated ticks, public API, full 20-holder/12-whale fixture capacity, session-bound Stop and rejected origin/anonymous writes. These use market/wallet fixtures. Fourteen holder, eleven sharing/challenge/pilot and eleven paper browser scenarios pass; desktop 1440×1000 and mobile 390×844 have no uncaught errors. Deterministic regressions use explicit remote-artwork fallbacks. Normal in-app browser checks load all three preset portraits from real sources and report no captured warning/error logs. The in-app viewport override did not apply consistently to the inactive local tab; exact mobile coverage is the 390-pixel fixture test. Normal-browser evidence records measured dimensions rather than claiming a real-device mobile check.
 
 Screenshots and receipts are saved in this app's ignored `work/` and the planning workspace's `reviews/2026-10-07/live-paper-beta/`. Selected screenshots are in `docs/screenshots/`. Exact source heads, CI and staging observation receipts belong in the dated review, rather than self-referential commit IDs here.
 
@@ -95,7 +95,11 @@ All five migrations were applied remotely to the new empty database. A saved D1 
 
 Use the exact staging config for every staging command. To pause execution safely, deploy with `PAPER_ENABLED=0` and remove its cron in that config; preserve paper tables and records. Resume only with the same tested rules hash. Code rollback does not roll back D1. Do not restore a database containing later holder records without an explicit recovery decision. A provider-revised candle requires diagnosing the discrepancy; do not simply clear `halted` to continue. End the beta deliberately after 14 days: neutral watch IDs do not silently restart at the end.
 
+Remote startup diagnosis needs owner dashboard sign-in. A proposed direct OAuth-credential API inspection was rejected by automatic approval review before execution; normal authenticated CLI operations succeeded, and the dashboard is the remaining inspection route. No credential was printed or extracted.
+
 Still required before a holder launch:
+
+- Establish actual remote cron delivery and real-market recording, then prove execution continues with the browser closed. No market observations or remote preset watches exist yet.
 
 - Real eligible holder desktop-extension and mobile wallet-browser SIWE, provider inventory, historical publish/edit/withdraw, paper Start/Stop/new-run and public link acceptance. Capture real ownership blocks and frozen-score equality. WalletConnect is not implemented.
 - A 7–14-day operational rehearsal: recurring cron delivery, observed receipt delays/gaps, outage recovery, restart/deployment handling, bounded runtime/queries at the chosen account plan, retention and no duplicate fills. Short local/remote observation is not this rehearsal. See [Cloudflare D1 limits](https://developers.cloudflare.com/d1/platform/limits/).
