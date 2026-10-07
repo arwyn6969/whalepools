@@ -6,10 +6,10 @@ Use the isolated paper staging app. Keep wallets, session material, volunteered 
 
 | Owner/eligible holder check | Expected experience | Current evidence |
 | --- | --- | --- |
-| Desktop wallet sign-in and inventory | One owned whale is sufficient; no transaction, transfer or WWAX step | Fixture pass; real holder pending |
+| Desktop wallet sign-in and inventory | One owned whale is sufficient; sign in and retry on the live fleet/Tide page without leaving it; no transaction, transfer or WWAX step | Fixture pass; real holder pending |
 | Mobile wallet sign-in and inventory | Chosen wallet returns to the app; eligible crew loads and remains usable | Responsive fixture/native rendering pass; real wallet handoff pending |
 | Historical publish → edit → withdraw | Server rechecks ownership; stale writes rejected; dated historical labels remain clear | Unit/workerd/fixture pass; real holder pending |
-| Draft reload, wallet switch and visitor inspection | Holder draft restores only for that wallet/rules; visitors cannot overwrite it | Fixture pass; real holder pending |
+| Draft reload, wallet switch and visitor inspection | Historical and live drafts restore separately for that wallet/exact rules in the same browser; consent clears on reload; visitors cannot overwrite either | 73 fixture scenarios/native restoration pass; real holder pending |
 | Paper Start → new candle → daily recap | Consent and actual ownership confirmed; queued/fill/wait reason and UTC coverage understandable | Fixture and public real-price reads pass; real holder Start pending |
 | Stop → new crew → archive | Stop freezes last valuation; both dated watches remain accessible to the owner | Fixture pass; real holder pending |
 | Daily Tide pick | Owned badge, next UTC start and locked choice understood; no private-company mutation | Fixture pass; real holder pending |
