@@ -7,6 +7,8 @@ import {privateKeyToAccount} from 'viem/accounts';
 import {decodeFunctionData, encodeAbiParameters, keccak256, stringToHex, verifyMessage} from 'viem';
 import {createApi} from '../src/api.mjs';
 import {createArcadeBoard} from '../src/arcade-board.mjs';
+import {createPaperService,tickPaper} from '../src/paper-service.mjs';
+import {PAPER_RULES} from '../src/paper-engine.mjs';
 import {COLLECTIONS, CHAIN_ID} from '../src/config.mjs';
 import {database} from './database.mjs';
 import {FIXTURE_KEYS, FIXTURE_HOLDINGS} from '../tests/fixtures/wallets.mjs';
@@ -25,7 +27,7 @@ const mime = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; char
 
 // This preview deliberately lives outside the Worker, its asset allowlist and export.
 // Every database is in memory and every wallet key/ownership fact is a fixture.
-export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_PORT || 48373)} = {}) {
+export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_PORT || 48373), paperEnabled = process.env.RW_PAPER_FIXTURE==='1'} = {}) {
   const scores = JSON.parse(await readFile(path.join(app, 'build/arcade-scores.json'), 'utf8'));
   const season = JSON.parse(await readFile(path.join(app, 'arcade.json'), 'utf8'));
   const accountByName = Object.fromEntries(Object.entries(FIXTURE_KEYS).map(([name, key]) => [name, privateKeyToAccount(key)]));
@@ -46,10 +48,23 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
     }
   };
   const board = createArcadeBoard({season, scores, ruleHash: scores.ruleHash, client});
-  const api = createApi({season, client, board});
+  const paperRules=JSON.parse(await readFile(path.join(app,'build/public/paper-rules.json'),'utf8'));
+  state.paperNow=Math.floor(Date.now()/PAPER_RULES.interval)*PAPER_RULES.interval+1000;
+  const anchor=state.paperNow-PAPER_RULES.interval;
+  const paper=createPaperService({season,client,rulesHash:paperRules.ruleHash,now:()=>state.paperNow});
+  const api = createApi({season, client, board, paper});
+  async function paperTick({advance=0,error=false}={}){
+    state.paperNow+=advance*PAPER_RULES.interval;
+    return tickPaper({DB:db,PAPER_ENABLED:'1'},{rulesHash:paperRules.ruleHash,now:state.paperNow,market:async()=>{
+      if(error)throw Error('Fixture market outage.');
+      const latest=Math.floor(state.paperNow/PAPER_RULES.interval)*PAPER_RULES.interval-PAPER_RULES.interval;
+      return {coin:'@fixture',bars:Array.from({length:100},(_,i)=>{const t=latest-(99-i)*PAPER_RULES.interval,p=200+(t-anchor)/PAPER_RULES.interval*.2;return {t,o:p,h:p+.05,l:p-.05,c:p};})};
+    }});
+  }
+  if(paperEnabled)await paperTick();
   await board.handle({request: new Request('http://fixture.invalid/api/seat', {method: 'POST', headers: {'x-whale-revision': '0', 'x-whale-mutation': crypto.randomUUID()}}), db, me: {address: walletByName.rival}, data: {agents: FIXTURE_HOLDINGS.rival.map((a, i) => ({...a, strategy: i ? 'magnet' : 'breakout'})), collection: 'rarewhales', tokenId: 901, nickname: 'The Fixture Rival', publish: true, ruleHash: scores.ruleHash}});
   const fixtureBundle = await build({entryPoints: [path.join(app, 'tests/fixtures/provider.mjs')], bundle: true, write: false, format: 'iife', platform: 'browser', target: 'es2022'});
-  const toolbar = `<aside id="fixture-banner" aria-label="Fixture preview controls" style="position:relative;z-index:999;background:#fff0b1;color:#16233f;border-bottom:3px solid #16233f;padding:12px;font:14px system-ui;display:flex;gap:14px;flex-wrap:wrap;align-items:center"><strong>LOCAL FIXTURE PREVIEW — disposable wallets, simulated NFT ownership; no real holder wallet or production writes.</strong><label>Wallet <select id="fixture-wallet"><option value="holder">Holder A · 3 whales</option><option value="second">Holder B · 2 whales</option><option value="empty">No holdings</option></select></label><label>Inventory <select id="fixture-inventory"><option value="normal">Normal</option><option value="error">RPC failure</option><option value="delay">22 second delay</option></select></label><label><input id="fixture-reject" type="checkbox">Reject signature</label><label><input id="fixture-chain" type="checkbox">Wrong chain</label></aside>`;
+  const toolbar = `<aside id="fixture-banner" aria-label="Fixture preview controls" style="position:relative;z-index:999;background:#fff0b1;color:#16233f;border-bottom:3px solid #16233f;padding:12px;font:14px system-ui;display:flex;gap:14px;flex-wrap:wrap;align-items:center"><strong>LOCAL FIXTURE PREVIEW — disposable wallets, simulated NFT ownership; no real holder wallet or production writes. ${paperEnabled?'Paper candles are synthetic test data.':''}</strong><label>Wallet <select id="fixture-wallet"><option value="holder">Holder A · 3 whales</option><option value="second">Holder B · 2 whales</option><option value="empty">No holdings</option></select></label><label>Inventory <select id="fixture-inventory"><option value="normal">Normal</option><option value="error">RPC failure</option><option value="delay">22 second delay</option></select></label><label><input id="fixture-reject" type="checkbox">Reject signature</label><label><input id="fixture-chain" type="checkbox">Wrong chain</label></aside>`;
   async function rpc(request) {
     const mode = state.rpcMode, delay = state.rpcDelayMs;
     const ownership = structuredClone(state.holdings);
@@ -81,6 +96,7 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
       for await (const chunk of req) {length += chunk.length; if (length > 16384) throw Error('Request too large.'); chunks.push(chunk);}
       const body = Buffer.concat(chunks), jsonBody = body.length ? JSON.parse(body.toString()) : {};
       const send = (status, value, headers = {}) => {res.writeHead(status, {'cache-control': 'no-store', ...headers}); res.end(typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value));};
+      if(pathname==='/__fixture/paper'&&req.method==='POST'){if(req.headers.origin!==origin)return send(403,'Use the fixture preview.');const advance=Math.max(0,Math.min(10,Number(jsonBody.advance)||0));return send(200,await paperTick({advance,error:jsonBody.error===true}),{'content-type':'application/json'});}
       if (pathname === '/__fixture/rpc' && req.method === 'POST') return send(200, Array.isArray(jsonBody) ? await Promise.all(jsonBody.map(rpc)) : await rpc(jsonBody), {'content-type': 'application/json'});
       if (pathname === '/__fixture/control') {
         if (req.method === 'POST') {
@@ -96,7 +112,7 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
         if (state.responseDelayMs && pathname === state.delayPath) await sleep(state.responseDelayMs);
         const request = new Request(origin + req.url, {method: req.method, headers: req.headers, ...(!['GET', 'HEAD'].includes(req.method) ? {body} : {})});
         if (pathname === '/api/seat' && req.method !== 'GET' && state.writeMode === 'reject') return send(503, {error: 'Fixture ownership check unavailable. Your published company has not changed.'}, {'content-type': 'application/json'});
-        const response = await api(request, {DB: db, APP_ORIGIN: origin});
+        const response = await api(request, {DB: db, APP_ORIGIN: origin,PAPER_ENABLED:paperEnabled?'1':'0'});
         if (pathname === '/api/seat' && req.method === 'POST' && state.writeMode === 'unknown') {res.destroy(); return;}
         let responseBody = Buffer.from(await response.arrayBuffer());
         if (pathname === '/api/club' && state.reverseEntries && response.status === 200) {
@@ -118,7 +134,7 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
   });
   await new Promise((resolve, reject) => {server.once('error', reject); server.listen(port, '127.0.0.1', resolve);});
   origin = `http://127.0.0.1:${server.address().port}`;
-  return {origin, state, db, close: async () => {server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); db.close();}};
+  return {origin, state, db, paperTick, close: async () => {server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); db.close();}};
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

@@ -3,7 +3,10 @@ import scores from '../build/arcade-scores.json' with {type:'json'};
 import {createApi} from './api.mjs';
 import {createArcadeBoard} from './arcade-board.mjs';
 import {demoFetch,demoHeaders} from './demo-worker.mjs';
-const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),api=createApi({season,board});
+import {createPaperService,tickPaper} from './paper-service.mjs';
+import paperRules from '../build/public/paper-rules.json' with {type:'json'};
+const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper});
+export function launchTick(env){return tickPaper(env,{rulesHash:paperRules.ruleHash});}
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
  if(url.pathname.startsWith(base+'/api/')){
@@ -15,4 +18,4 @@ export async function launchFetch(request,env){
  }
  return demoFetch(request,env);
 }
-export default {fetch:launchFetch};
+export default {fetch:launchFetch,scheduled(_controller,env,ctx){ctx.waitUntil(launchTick(env));}};

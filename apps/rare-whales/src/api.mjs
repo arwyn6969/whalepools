@@ -32,7 +32,7 @@ async function limit(db,key,now,max=20) {
 }
 function registrationOpen(season,now) {return season.status==='registration' && now<Date.parse(season.registrationClosesAt) && now<Date.parse(season.startsAt);}
 function publicSeat(row,agents=[]){return row?{id:row.id,nickname:row.nickname,collection:row.collection,tokenId:row.token_id,strategy:row.strategy,joinedAt:row.joined_at,basis:row.access_basis,agents:agents.filter(a=>a.pool_id===row.id).map(a=>({collection:a.collection,tokenId:a.token_id,strategy:a.strategy,profile:JSON.parse(a.modifier_json)}))}:null;}
-export function createApi({season,client:injectedClient,now=Date.now,board}={}) {
+export function createApi({season,client:injectedClient,now=Date.now,board,paper}={}) {
   validateSeason(season);
   return async function handle(request,env) {
     const url=new URL(request.url),origin=env.APP_ORIGIN;
@@ -45,6 +45,8 @@ export function createApi({season,client:injectedClient,now=Date.now,board}={}) 
       if(request.method!=='GET' && request.headers.get('origin')!==origin)reject(403,'Open this action from the club website.');
       if(request.method==='GET' && request.headers.get('sec-fetch-site')==='cross-site')reject(403,'Cross-site request refused.');
       const me=await session(request,db,t,env.COOKIE_NAME||'rw_session');
+      if(paper&&request.method==='GET'&&url.pathname==='/api/paper')return json(await paper.read({db,me,env}));
+      if(paper&&request.method==='GET'&&url.pathname.startsWith('/api/paper/run/'))return json(await paper.read({db,me,env,id:url.pathname.slice('/api/paper/run/'.length)}));
       if(board&&request.method==='GET'&&url.pathname==='/api/club')return json(await board.club(db,me));
       if(board&&request.method==='GET'&&url.pathname.startsWith('/api/company/'))return json(await board.company(db,url.pathname.slice('/api/company/'.length)));
       if(board&&request.method==='GET'&&url.pathname==='/api/crew')return json(await board.crew(db));
@@ -92,6 +94,7 @@ export function createApi({season,client:injectedClient,now=Date.now,board}={}) 
       }
       if(!me)reject(401,'Connect and sign in with your wallet first.');
       await limit(db,`member:${me.address}`,t,40);
+      if(paper&&url.pathname.startsWith('/api/paper/'))return json(await paper.handle({request,db,me,env,data:request.method==='POST'?await body(request):null}));
       if(board)return json(await board.handle({request,db,me,env,data:request.method==='POST'?await body(request):null}));
       if(request.method==='DELETE' && url.pathname==='/api/seat') {
         if(!registrationOpen(season,t))reject(409,'Registration is closed; season entries are fixed.');

@@ -13,13 +13,15 @@
     "deploy:check": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
     "build:demo": "npm run build && node scripts/bundle-demo.mjs && node scripts/check-demo.mjs",
-    "test:runtime": "node scripts/check-runtime.mjs",
+    "test:runtime": "node scripts/check-runtime.mjs && node scripts/check-paper-runtime.mjs",
     "contracts:build": "node scripts/compile-contracts.mjs",
     "contracts:test": "node scripts/test-contracts.mjs",
     "launch:prepare": "npm run contracts:build && node scripts/prepare-launch.mjs",
     "launch:serve": "node scripts/serve-launch.mjs",
     "launch:verify": "node scripts/verify-launch.mjs",
-    "contracts:test:fork": "node scripts/test-fork.mjs"
+    "contracts:test:fork": "node scripts/test-fork.mjs",
+    "test:paper:browser": "node --experimental-sqlite scripts/check-paper.mjs",
+    "paper:research": "node scripts/paper-research.mjs"
   },
   "dependencies": {
     "viem": "^2.55.0"

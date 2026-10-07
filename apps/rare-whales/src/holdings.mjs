@@ -62,7 +62,9 @@ export async function loadHoldings({address,env={},client,logClient,signal,onPro
   controller.signal.addEventListener('abort',stop,{once:true});
   Promise.resolve().then(()=>{if(controller.signal.aborted)throw controller.signal.reason;return operation();}).then(value=>{cleanup();if(controller.signal.aborted)reject(controller.signal.reason);else resolve(value);},error=>{cleanup();reject(controller.signal.aborted?controller.signal.reason:error);});
  });
- const makeClient=url=>createPublicClient({transport:http(url,{timeout:requestTimeoutMs,retryCount:0,fetchOptions:{signal:controller.signal}})});
+ // The outer deadline owns the user-facing timeout. Give the transport a small
+ // margin so its wrapped error cannot win the same-millisecond race.
+ const makeClient=url=>createPublicClient({transport:http(url,{timeout:requestTimeoutMs+1000,retryCount:0,fetchOptions:{signal:controller.signal}})});
  const collections=Object.entries(COLLECTIONS),items=[];
  let completedCollections=0;
  const progress=(phase,collection,extra={})=>{

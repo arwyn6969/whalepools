@@ -3,6 +3,8 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {build} from 'esbuild';
+import {PAPER_RULES} from '../src/paper-engine.mjs';
+import {buildPaperResearch} from '../src/paper-research.mjs';
 import {buildArcadeScores} from '../src/arcade-score.mjs';
 import {buildPractice} from '../src/practice.mjs';
 import {buildChallenge} from '../src/challenge.mjs';
@@ -24,6 +26,13 @@ for(const name of ['UBTC-1h.json','UBTC-4h.json']){
 }
 if(JSON.stringify(season.settings)!==JSON.stringify({...protocol.settings}))throw Error('Founding practice settings must match the declared frozen settings.');
 await mkdir(path.join(app,'build/public'),{recursive:true});
+const paperSources={};for(const name of ['src/paper-engine.mjs','src/paper-feed.mjs','src/paper-service.mjs','src/dna.mjs','src/access.mjs','src/config.mjs','arcade.json'])paperSources[name]=await hash(path.join(app,name));
+const paperHash=createHash('sha256').update(JSON.stringify({rules:PAPER_RULES,sources:paperSources})).digest('hex');
+await writeFile(path.join(app,'build/public/paper-rules.json'),JSON.stringify({...PAPER_RULES,ruleHash:paperHash}));
+const paperSamplePath=path.join(app,'research/paper-v1-5m.json'),paperSampleHash=await hash(paperSamplePath);
+const paperManifest=await load(path.join(app,'research/paper-v1-manifest.json'));
+if(paperSampleHash!==paperManifest.sha256)throw Error('Paper development snapshot checksum mismatch.');
+await writeFile(path.join(app,'build/public/paper-research.json'),JSON.stringify(buildPaperResearch(await load(paperSamplePath),paperHash,paperSampleHash)));
 const contracts=await compileContracts();
 const deployment=await load(path.join(app,'public/deployment.json'));
 await writeFile(path.join(app,'build/public/claims.json'),JSON.stringify({version:1,chainId:4663,creationCodeHash:keccak256(contracts.contracts.WhaleWaxClaims.bytecode),...deployment}));

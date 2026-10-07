@@ -1,0 +1,10 @@
+{
+  "path": "paper-v1-5m.json",
+  "sha256": "6e93d256cf6d7dbad21c809dc5e1e3ac441f9ea63fc4086f66ecdfab6a1639ca",
+  "source": "https://api.hyperliquid.xyz/info",
+  "retrievedAt": "2026-10-07T12:45:00.429Z",
+  "from": 1790167200000,
+  "until": 1791376800000,
+  "kind": "inspected-development-snapshot",
+  "frozenHistoricalV1Changed": false
+}
