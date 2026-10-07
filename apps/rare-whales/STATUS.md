@@ -2,6 +2,16 @@
 
 Updated 7 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
+## Live onboarding and return candidate
+
+`codex/live-onboarding-return`, stacked on recap head `1750cfc`, implementation `a7f617c`: direct fleet/Tide sign-in and inventory progress/retry keep holders in the live journey. Private unfinished live names/styles/crews restore per wallet and exact paper hash in this browser; consent/authentication/results never persist. Intentional empty crews survive; only completed verification on the holder's own setup can prune transferred selections. Visitor pages and late wallet/inventory replies cannot overwrite private choices. Historical drafts remain separate.
+
+155 tests, frozen-integrity 23-asset build, three actual workerd/D1 suites, staging dry run and 73 fixture browser scenarios pass. Desktop 1440×1000/mobile 390×844 fixture and native layouts have no overflow or warning/error logs. Native fixture restoration shows the chosen name/style/crew with consent cleared. Fixtures do not establish real eligible-holder signing.
+
+Isolated staging `65dd83cf-3ced-4c2d-9ff2-0f1e41e0908c` serves all 23 exact assets and preserves original watches/start dates, queued 8 October Tide and six migrations. No migration, restore, rule/hash, contract/dependency lock or production change. At 19:34 UTC: healthy feed, 71/71 actionable closes, zero gaps, ~0.247 days elapsed; no actual complete Tide. Real desktop/mobile signing, publish/edit/withdraw, Start/Stop/follow-up/archive/Tide pick, 7–14-day reliability, maintenance/consent/share acceptance and ten-holder pilot remain open.
+
+[Review/restart](docs/LIVE_ONBOARDING_REVIEW.md), [acceptance worksheet](docs/LIVE_LAUNCH_ACCEPTANCE.md), [staging](https://whale-pools-paper-staging.mrarwyn.workers.dev/whalepools/#paper), [local real-price preview](http://127.0.0.1:48383/whalepools/#paper), [disposable holder preview](http://127.0.0.1:48384/#paper). Exact PR/head/CI and screenshots are saved in planning `reviews/2026-10-07/live-onboarding-return/`. Production and maintenance PR #1 remain separate; WWAX and Vector Desk are untouched.
+
 ## Watch recaps and launch acceptance candidate
 
 `codex/watch-recaps-preview`, stacked on social head `6ddff97`: UTC daily recaps from the full bounded saved ledger, direct `/watch/<uuid>` public destinations with dated server share metadata, downloadable PNG plus SVG snapshots, a local social cover and read-only launch preflight. Recaps explain actual fills, fees, modeled fill slippage and missing/valuation-only observations. They preserve midnight attribution, completed-window gaps, stopped records and older rules. Navigation/wallet changes discard stale reads. Explicit successful owner recap reads can record a newer observation in the existing opt-in live pilot; waiting, failed, duplicate and visitor reads cannot.

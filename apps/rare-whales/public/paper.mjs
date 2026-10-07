@@ -2,6 +2,7 @@ import {requestJSON} from './request.mjs';
 import {paperURL,paperCard,paperPNG,watchPath} from './paper-share.mjs';
 import {downloadLocal} from './fleet-social.mjs';
 import {installWatchRecaps} from './watch-recap.mjs';
+import {loadPaperDraft,savePaperDraft,reconcilePaperDraft} from './paper-draft.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>'$'+Number(n).toFixed(2),pct=n=>(n>=0?'+':'')+Number(n).toFixed(3)+'%';
@@ -13,21 +14,45 @@ function curve(history){
  const points=k=>history.map((p,i)=>`${(i/(history.length-1)*700).toFixed(2)},${(160-(p[k]-lo)/span*140).toFixed(2)}`).join(' ');
  return `<svg class="paper-chart" viewBox="0 0 700 180" role="img" aria-label="Last day of paper balance and 25 percent holding reference"><line x1="0" x2="700" y1="${160-(1000-lo)/span*140}" y2="${160-(1000-lo)/span*140}" class="paper-cash-line"/><polyline points="${points('hold')}" class="paper-hold-line"/><polyline points="${points('equity')}" class="paper-equity-line"/></svg><p class="muted">Pink: company · blue: 25% hold · dashed: cash. ${stamp(history[0].t)} — ${stamp(history.at(-1).t)}. Gaps are valued but cannot create fills.</p>`;
 }
-export function installPaper({api,asset,avatar,hydrateArt,context,social}){
+export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,refreshInventory}){
  let shownRuns=new Map();
  const recaps=installWatchRecaps({root:$('#paper-fleet'),api,address:()=>context().address,onRead:r=>{const run=shownRuns.get(r.id);return run?.owner===context().address&&r.lastValuation?social.review({...run,history:[{t:r.lastValuation}]}):false;}});
  const arcadeRibbon=$('.demo-ribbon').innerHTML,arcadeFooter=$('footer>span').textContent;
  let active=false,viewId=null,epoch=0,timer,data=null,loading=false,acting=false,wallet=null,whaleKey='',mutation=null,research=null;
+ const storage={getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)};
+ let draftScope=null,draft=null,draftStatus='',draftNotice='';
+ function saveSetup(){
+  if(!active||!draftScope||!draft||viewId)return;
+  const result=savePaperDraft(storage,wallet,data.rulesHash,draft);
+  draftStatus=result.status==='saved'?'Saved privately in this browser. Return with this wallet to continue.':result.status==='unavailable'?'Browser storage is unavailable. Keep this page open to keep your choices.':result.error;
+  return result;
+ }
  function controls(){
   $('#paper-launch').hidden=!!viewId;$('#paper-presets').hidden=!!viewId;
   const c=context(),next=c.address;
-  if(next!==wallet){wallet=next;whaleKey='';mutation=null;$('#paper-name').value='My Whale Watch';$('#paper-consent').checked=false;$('#paper-message').textContent='';}
+  if(next!==wallet){wallet=next;draftScope=null;draft=null;draftStatus='';draftNotice='';whaleKey='';mutation=null;$('#paper-name').value='My Whale Watch';$('#paper-style').value='balanced';$('#paper-consent').checked=false;$('#paper-message').textContent='';}
+  const scope=next&&data?.rulesHash?next+':'+data.rulesHash:null;
+  if(scope&&scope!==draftScope){
+   draftScope=scope;const saved=loadPaperDraft(storage,next,data.rulesHash);
+   draft=saved.draft??{nickname:'My Whale Watch',preset:'balanced',agents:null};
+   draftStatus=saved.status==='loaded'?'Your private live setup is restored. Check the whales, then approve publication when ready.':saved.status==='unavailable'?'Browser storage is unavailable. Keep this page open to keep your choices.':saved.status==='corrupt'?'The saved live setup could not be read. Choose your crew again; your public records are safe.':'Your unfinished setup is private until you publish.';
+   $('#paper-name').value=draft.nickname;$('#paper-style').value=draft.preset;$('#paper-consent').checked=false;whaleKey='';mutation=null;draftNotice='';
+  }
+  // Never interpret a failed or still-loading inventory as an empty wallet.
+  // Spectator routes can read records without rewriting the private setup.
+  if(active&&!viewId&&draft&&c.ready&&!c.inventoryLoading&&!c.inventoryError){
+   if(draft.agents===null){draft.agents=c.whales.slice(0,3);saveSetup();}
+   else{const reconciled=reconcilePaperDraft(draft,c.whales);if(reconciled.removed){draft=reconciled.draft;draftNotice=`${reconciled.removed} selected whale${reconciled.removed===1?' is':'s are'} no longer in this wallet. Your name and style are kept; review your crew before publishing.`;saveSetup();}}
+  }
   const own=data?.me?.address===c.address?data.me?.run:null,running=own?.status==='running';
   $('#paper-fields').disabled=acting||!data?.enabled||!c.ready||!c.whales.length||running;
   $('#paper-stop').hidden=!running;$('#paper-stop').disabled=acting;
-  $('#paper-eligibility').textContent=!next?'Sign in with a wallet holding at least one Rare Whales or WhaleStreet NFT.':!c.ready?'Your wallet inventory must finish loading. Use My Company to connect or refresh; your historical draft is kept.':running?'Your dated crew and rules are locked. Stop this watch to choose another style.':`${c.whales.length} owned whales available. One is enough; we select up to three to get you started. No historical publication is required.`;
-  const fingerprint=next+':'+c.whales.map(key).join(',');
-  if(fingerprint!==whaleKey){whaleKey=fingerprint;$('#paper-whales').innerHTML=c.whales.map((a,i)=>`<label class="consent"><input type="checkbox" data-paper-whale="${esc(key(a))}" ${i<3?'checked':''}> ${a.collection==='rarewhales'?'Rare Whales':'WhaleStreet'} #${a.tokenId}</label>`).join('');}
+  $('#paper-connect').hidden=!!next&&c.walletReady;$('#paper-connect').disabled=c.connecting;$('#paper-connect').textContent=c.connecting?'WAITING FOR WALLET…':next?'RECONNECT THIS WALLET':'SIGN IN WITH YOUR WALLET';
+  $('#paper-inventory-refresh').hidden=!next;$('#paper-inventory-refresh').disabled=c.connecting||c.inventoryLoading||acting;
+  $('#paper-eligibility').textContent=!next?'One Rare Whales or WhaleStreet NFT is enough. Sign in here to find your whales; no historical company is required.':c.inventoryLoading?(c.inventoryProgress||'Checking your whales… Your private choices are kept.'):c.inventoryError?c.inventoryError+' Your live setup is kept. Use Refresh my whales to retry.':!c.walletReady?'Reconnect this wallet to verify ownership. Your private choices are kept.':!c.ready?'Refresh my whales to finish checking ownership.':running?'Your dated crew and rules are locked. Stop this watch to choose another style.':!c.whales.length?'No eligible whales found in this wallet. One NFT from either collection is enough; refresh after receiving one.':`${c.whales.length} owned whales available. Choose up to twelve, select a ready-made style, then publish a $1,000 simulated watch.`;
+  $('#paper-draft-status').textContent=[draftStatus,draftNotice].filter(Boolean).join(' ');
+  const selected=new Set((draft?.agents??[]).map(key)),fingerprint=next+':'+c.whales.map(key).join(',')+':'+[...selected].join(',');
+  if(fingerprint!==whaleKey){whaleKey=fingerprint;$('#paper-whales').innerHTML=c.whales.map(a=>`<label class="consent"><input type="checkbox" data-paper-whale="${esc(key(a))}" ${selected.has(key(a))?'checked':''}> ${a.collection==='rarewhales'?'Rare Whales':'WhaleStreet'} #${a.tokenId}</label>`).join('');}
  }
  function card(run){
   const s=run.stats,h=run.history,last=h.at(-1),first=h[0],change=last&&first?last.equity-first.equity:0;
@@ -65,6 +90,18 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social}){
   catch{const input=host.querySelector('input');input.focus();input.select();status.textContent='Select and copy the visible link with your browser’s copy command.';}
  });
  $('#paper-refresh').addEventListener('click',()=>{clearTimeout(timer);load();});
+ $('#paper-connect').addEventListener('click',signIn);
+ $('#paper-inventory-refresh').addEventListener('click',refreshInventory);
+ function editSetup(){
+  const c=context();if(!active||viewId||!draft||!c.ready||acting||$('#paper-fields').disabled)return;
+  const agents=[...document.querySelectorAll('[data-paper-whale]:checked')].map(i=>c.whales.find(a=>key(a)===i.dataset.paperWhale)).filter(Boolean);
+  if(agents.length>12){$('#paper-message').textContent='Choose up to twelve whales for this watch.';whaleKey='';controls();return;}
+  const previous=draft;draft={nickname:$('#paper-name').value,preset:$('#paper-style').value,agents};draftNotice='';
+  if(saveSetup()?.status==='invalid')draft=previous;
+  controls();
+ }
+ $('#paper-form').addEventListener('input',e=>{if(e.target.id!=='paper-consent')editSetup();});
+ $('#paper-form').addEventListener('change',e=>{if(e.target.id!=='paper-consent')editSetup();});
  $('#paper-form').addEventListener('submit',async e=>{
   e.preventDefault();if(acting)return;const c=context(),address=c.address;
   const selected=[...document.querySelectorAll('[data-paper-whale]:checked')].map(input=>c.whales.find(a=>key(a)===input.dataset.paperWhale)).filter(Boolean);

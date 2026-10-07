@@ -8,7 +8,7 @@ export function downloadLocal(value,type,name){
  const url=URL.createObjectURL(new Blob([value],{type})),a=document.createElement('a');
  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-export function installFleetSocial({api,context}){
+export function installFleetSocial({api,context,signIn,refreshInventory}){
  const pilot=createLivePilot(storage),originalRibbon=$('.demo-ribbon').innerHTML;
  let page=null,viewId=null,wallet=null,epoch=0,own=null,known=false,ownLoading=false,attempt=null,confirmedRun=null;
  let archiveRows=[],archiveNext=null,archiveLoaded=false,archiveLoading=false,archiveOwnKey='';
@@ -84,12 +84,17 @@ export function installFleetSocial({api,context}){
  }
  function tideForm(round){
   const c=context(),allowed=round?.status==='queued'&&round.rulesHash===tideData?.rulesHash&&!round.mine;
+  $('#tide-connect').hidden=!!c.address&&c.walletReady;$('#tide-connect').disabled=c.connecting;
+  $('#tide-inventory-refresh').hidden=!c.address;$('#tide-inventory-refresh').disabled=c.connecting||c.inventoryLoading||acting;
+  $('#tide-inventory-status').textContent=c.inventoryLoading?(c.inventoryProgress||'Checking your whale badge…'):c.inventoryError?c.inventoryError+' Use Refresh my whales to retry.':c.address&&!c.walletReady?'Reconnect this wallet to verify your badge.':'';
   $('#tide-fields').disabled=acting||!allowed||!c.ready||!c.whales.length||tideData?.serverTime>=round?.startsAt;
-  $('#tide-eligibility').textContent=round?.mine?'Your '+round.mine.preset+' pick is saved and locked. It follows the common round; your company keeps its own crew.':!allowed?'This round cannot accept another pick. Choose an upcoming round.':!c.address?'Sign in with one owned whale as your entry badge.':!c.ready?'Your badge must finish loading in My Company before choosing a preset.':c.whales.length?c.whales.length+' owned whales available. Confirm one preset before the common start.':'This wallet needs one Rare Whales or WhaleStreet NFT to join.';
+  $('#tide-eligibility').textContent=round?.mine?'Your '+round.mine.preset+' pick is saved and locked. It follows the common round; your company keeps its own crew.':!allowed?'This round cannot accept another pick. Choose an upcoming round.':!c.address?'Sign in here with one owned whale as your entry badge.':!c.ready?'Finish checking your badge here before choosing a preset.':c.whales.length?c.whales.length+' owned whales available. Confirm one preset before the common start.':'This wallet needs one Rare Whales or WhaleStreet NFT to join.';
   const selected=$('#tide-badge').value;
   $('#tide-badge').innerHTML=c.whales.map(a=>'<option value="'+esc(a.collection+':'+a.tokenId)+'">'+(a.collection==='rarewhales'?'Rare Whales':'WhaleStreet')+' #'+a.tokenId+'</option>').join('');
   if(c.whales.some(a=>a.collection+':'+a.tokenId===selected))$('#tide-badge').value=selected;
  }
+ $('#tide-connect').addEventListener('click',signIn);
+ $('#tide-inventory-refresh').addEventListener('click',refreshInventory);
  function renderTide(){
   const rows=tideData.rounds,now=tideData.serverTime;
   const round=viewId?rows.find(r=>r.id===viewId):rows.find(r=>r.status==='running')||rows.find(r=>r.status==='queued'&&r.startsAt>now)||rows[0];
