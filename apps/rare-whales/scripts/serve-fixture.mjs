@@ -9,6 +9,8 @@ import {createApi} from '../src/api.mjs';
 import {createArcadeBoard} from '../src/arcade-board.mjs';
 import {createPaperService,tickPaper} from '../src/paper-service.mjs';
 import {createFleetSocialService} from '../src/fleet-social-service.mjs';
+import {createWatchRecaps} from '../src/watch-recap.mjs';
+import {watchPreview} from '../src/watch-preview.mjs';
 import {tickTide} from '../src/daily-tide.mjs';
 import {PAPER_RULES} from '../src/paper-engine.mjs';
 import {COLLECTIONS, CHAIN_ID} from '../src/config.mjs';
@@ -25,7 +27,7 @@ const zero = '0x' + '0'.repeat(40);
 const word = value => '0x' + String(value).replace(/^0x/, '').padStart(64, '0');
 const hex = value => '0x' + BigInt(value).toString(16);
 const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
-const mime = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.avif': 'image/avif', '.ttf': 'font/ttf'};
+const mime = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png':'image/png','.svg': 'image/svg+xml', '.avif': 'image/avif', '.ttf': 'font/ttf'};
 
 // This preview deliberately lives outside the Worker, its asset allowlist and export.
 // Every database is in memory and every wallet key/ownership fact is a fixture.
@@ -56,7 +58,8 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
   const paper=createPaperService({season,client,rulesHash:paperRules.ruleHash,now:()=>state.paperNow});
   const tideRules=JSON.parse(await readFile(path.join(app,'build/public/tide-rules.json'),'utf8'));
   const social=createFleetSocialService({season,client,tideHash:tideRules.ruleHash,paperHash:paperRules.ruleHash,now:()=>state.paperNow});
-  const api = createApi({season, client, board, paper,social});
+  const recaps=createWatchRecaps({rulesHash:paperRules.ruleHash,now:()=>state.paperNow});
+  const api = createApi({season, client, board, paper,social,recaps});
   async function paperTick({advance=0,error=false}={}){
     state.paperNow+=advance*PAPER_RULES.interval;
     const result=await tickPaper({DB:db,PAPER_ENABLED:'1'},{rulesHash:paperRules.ruleHash,now:state.paperNow,market:async()=>{
@@ -128,6 +131,7 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
         }
         return send(response.status, responseBody, Object.fromEntries(response.headers));
       }
+      if(pathname.startsWith('/watch/')){const response=await watchPreview(new Request(origin+req.url,{method:req.method}),{DB:db,PAPER_ENABLED:paperEnabled?'1':'0',APP_ORIGIN:origin,ASSETS:{fetch:async()=>new Response((await readFile(path.join(app,'build/public/index.html'),'utf8')).replace('<body>','<body>'+toolbar+'<script src="/__fixture/provider.js"></script>'))}},{paper,base:''});return send(response.status,Buffer.from(await response.arrayBuffer()),Object.fromEntries(response.headers));}
       const name = pathname === '/' ? 'index.html' : pathname.slice(1);
       if (!/^[a-zA-Z0-9/_.-]+$/.test(name) || name.includes('..')) return send(404, 'Not found');
       let contents = await readFile(path.join(app, 'build/public', name));

@@ -5,7 +5,19 @@ export function paperURL(base,id){
  if(!companyId(id))throw Error('Invalid dated paper record.');
  const url=new URL(base);
  if(!['http:','https:'].includes(url.protocol))throw Error('Use an HTTP paper record link.');
- url.username='';url.password='';url.search='';url.hash='paper/'+id.toLowerCase();return url.href;
+ url.username='';url.password='';url.search='';url.hash='';
+ url.pathname=url.pathname.replace(/\/watch\/[^/]*\/?$/,'/').replace(/\/index\.html$/,'/').replace(/\/?$/,'/')+'watch/'+id.toLowerCase();return url.href;
+}
+export function watchPath(path){const id=path.match(/\/watch\/([^/]+)$/)?.[1];return companyId(id)?id.toLowerCase():null;}
+export async function paperPNG(run,url){
+ // Draw our small, generated text/rectangle SVG vocabulary directly. No remote
+ // images, blob image permission, SVG scripts or browser-specific SVG decoding.
+ const svg=new DOMParser().parseFromString(paperCard(run,url),'image/svg+xml').documentElement;
+ const canvas=document.createElement('canvas');canvas.width=Number(svg.getAttribute('width'));canvas.height=Number(svg.getAttribute('height'));
+ const ctx=canvas.getContext('2d');if(!ctx)throw Error('Image export unavailable');
+ for(const rect of svg.querySelectorAll('rect')){const n=k=>Number(rect.getAttribute(k)||0),w=rect.getAttribute('width')==='100%'?canvas.width:n('width'),h=rect.getAttribute('height')==='100%'?canvas.height:n('height');ctx.fillStyle=rect.getAttribute('fill');ctx.fillRect(n('x'),n('y'),w,h);if(rect.hasAttribute('stroke')){ctx.strokeStyle=rect.getAttribute('stroke');ctx.lineWidth=n('stroke-width');ctx.strokeRect(n('x'),n('y'),w,h);}}
+ ctx.fillStyle='#16233f';for(const text of svg.querySelectorAll('text')){ctx.font=`${text.getAttribute('font-weight')||'normal'} ${text.getAttribute('font-size')}px sans-serif`;ctx.fillText(text.textContent,Number(text.getAttribute('x')),Number(text.getAttribute('y')));}
+ return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Image export timed out')),5000);canvas.toBlob(blob=>{clearTimeout(timer);blob?resolve(blob):reject(Error('Image export unavailable'));},'image/png');});
 }
 export function paperCard(run,url){
  if(!companyId(run?.id)||! /^[0-9a-f]{64}$/.test(run.rulesHash||'')||!run.stats||!Array.isArray(run.history)||!Array.isArray(run.agents)||run.agents.length>12)throw Error('Refresh a saved paper record before exporting.');
