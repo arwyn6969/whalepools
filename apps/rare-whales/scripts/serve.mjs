@@ -12,7 +12,7 @@ const filename=paperEnabled?(process.env.RW_PAPER_DB||'paper.sqlite'):localAuth?
 if(!/^[a-z0-9-]+\.sqlite$/.test(filename))throw Error('Use a local work database filename.');
 const DB=database(path.join(app,'work',filename));
 const port=Number(process.env.RW_PORT||48372),origin=`http://127.0.0.1:${port}`;
-const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.avif':'image/avif','.svg':'image/svg+xml','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
+const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json','.avif':'image/avif','.png':'image/png','.svg':'image/svg+xml','.ttf':'font/ttf','.txt':'text/plain; charset=utf-8'};
 const ASSETS={async fetch(request){let name=new URL(request.url).pathname;if(name==='/')name='/index.html';try{const data=await readFile(path.join(app,'build/public',name));return new Response(request.method==='HEAD'?null:data,{headers:{'content-type':types[path.extname(name)]||'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}}};
 const env={DB,ASSETS,APP_ORIGIN:origin,BASE_PATH:process.env.RW_BASE_PATH||'',PAPER_ENABLED:paperEnabled?'1':'0',TIDE_ENABLED:process.env.RW_TIDE==='1'?'1':'0'};
 let recording=Promise.resolve(),recordingBusy=false;

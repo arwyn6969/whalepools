@@ -23,7 +23,9 @@
     "test:paper:browser": "node --experimental-sqlite scripts/check-paper.mjs",
     "test:social:browser": "node --experimental-sqlite scripts/check-social.mjs",
     "pilot:live:readout": "node scripts/live-pilot-readout.mjs",
-    "paper:research": "node scripts/paper-research.mjs"
+    "paper:research": "node scripts/paper-research.mjs",
+    "test:recap:browser": "node --experimental-sqlite scripts/check-watch-recaps.mjs",
+    "paper:readiness": "node scripts/live-readiness.mjs"
   },
   "dependencies": {
     "viem": "^2.55.0"

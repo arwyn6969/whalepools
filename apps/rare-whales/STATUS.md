@@ -2,6 +2,16 @@
 
 Updated 7 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
+## Watch recaps and launch acceptance candidate
+
+`codex/watch-recaps-preview`, stacked on social head `6ddff97`: UTC daily recaps from the full bounded saved ledger, direct `/watch/<uuid>` public destinations with dated server share metadata, downloadable PNG plus SVG snapshots, a local social cover and read-only launch preflight. Recaps explain actual fills, fees, modeled fill slippage and missing/valuation-only observations. They preserve midnight attribution, completed-window gaps, stopped records and older rules. Navigation/wallet changes discard stale reads. Explicit successful owner recap reads can record a newer observation in the existing opt-in live pilot; waiting, failed, duplicate and visitor reads cannot.
+
+149 tests, a 23-asset build, all three actual workerd/D1 suites, Wrangler staging dry run and 58 fixture browser scenarios pass. Native staging desktop 1440×1000 and mobile 390×844 have no overflow or warning/error logs; native copy and PNG download pass. Staging version `40a9e4cd-125e-41bf-8089-c31dadcb8cf8` preserves all three v1 watch IDs/start times, the queued 8 October Tide and six applied migrations. No new migration, rule/hash change, dependency/contract lock change, production release, invitation or social post.
+
+[Review/restart instructions](docs/WATCH_RECAPS_REVIEW.md), [real-holder acceptance worksheet](docs/LIVE_LAUNCH_ACCEPTANCE.md), [isolated staging watch](https://whale-pools-paper-staging.mrarwyn.workers.dev/whalepools/watch/e2a7f522-8010-4d1b-8a97-000000000001), [local real-market watch](http://127.0.0.1:48381/whalepools/watch/e2a7f522-8010-4d1b-8a97-000000000001) and [disposable holder fixture](http://127.0.0.1:48382/#paper). Exact Git/PR/CI and screenshots are saved in the planning workspace under `reviews/2026-10-07/watch-recaps-preview/`.
+
+The preflight saw 53/53 actionable closes at 18:01 UTC on 7 October, healthy @142 data, and only ~0.18 days of watch age. It explicitly leaves launch readiness false. Real eligible-wallet desktop/mobile signing, historical publish/edit/withdraw, paper Start/Stop/follow-up/archive/Tide pick, actual complete round, 7–14-day reliability, real-device sharing destination, maintenance/consent review and ten-holder pilot remain acceptance gates. Fixtures establish software coverage, not real-holder signing or a completed live cohort. Production remains a separate decision.
+
 ## Live fleet social sprint candidate
 
 `codex/live-fleet-social`, stacked on beta head `97df59d`: dated public watch links/SVG cards, a wallet-only paged watch archive, Daily Tide v1 and a separate opt-in live holder pilot. One preset locks before the shared UTC day; neutral stats and costs are equal, and final ranks require all 288 timely gap-free observations. Partial rounds retain labelled results. The first real staging cohort is queued for 8 October 00:00 UTC; no completed real round is claimed. Public inspection hides holder mutation controls and preserves private historical drafts.

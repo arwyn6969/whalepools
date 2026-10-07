@@ -32,7 +32,7 @@ async function limit(db,key,now,max=20) {
 }
 function registrationOpen(season,now) {return season.status==='registration' && now<Date.parse(season.registrationClosesAt) && now<Date.parse(season.startsAt);}
 function publicSeat(row,agents=[]){return row?{id:row.id,nickname:row.nickname,collection:row.collection,tokenId:row.token_id,strategy:row.strategy,joinedAt:row.joined_at,basis:row.access_basis,agents:agents.filter(a=>a.pool_id===row.id).map(a=>({collection:a.collection,tokenId:a.token_id,strategy:a.strategy,profile:JSON.parse(a.modifier_json)}))}:null;}
-export function createApi({season,client:injectedClient,now=Date.now,board,paper,social}={}) {
+export function createApi({season,client:injectedClient,now=Date.now,board,paper,social,recaps}={}) {
   validateSeason(season);
   return async function handle(request,env) {
     const url=new URL(request.url),origin=env.APP_ORIGIN;
@@ -45,6 +45,7 @@ export function createApi({season,client:injectedClient,now=Date.now,board,paper
       if(request.method!=='GET' && request.headers.get('origin')!==origin)reject(403,'Open this action from the club website.');
       if(request.method==='GET' && request.headers.get('sec-fetch-site')==='cross-site')reject(403,'Cross-site request refused.');
       const me=await session(request,db,t,env.COOKIE_NAME||'rw_session');
+      if(recaps&&request.method==='GET'&&url.pathname.startsWith('/api/paper/recap/'))return json(await recaps.read({db,env,url,id:url.pathname.slice('/api/paper/recap/'.length)}));
       if(social&&request.method==='GET'&&url.pathname==='/api/paper/history')return json(await social.archive({db,me,env,url}));
       if(social&&request.method==='GET'&&url.pathname==='/api/tide')return json(await social.tide({db,me,env,url}));
       if(paper&&request.method==='GET'&&url.pathname==='/api/paper')return json(await paper.read({db,me,env}));

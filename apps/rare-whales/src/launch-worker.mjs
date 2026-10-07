@@ -8,8 +8,10 @@ import paperRules from '../build/public/paper-rules.json' with {type:'json'};
 import tideRules from '../build/public/tide-rules.json' with {type:'json'};
 import {createFleetSocialService} from './fleet-social-service.mjs';
 import {tickTide} from './daily-tide.mjs';
+import {createWatchRecaps} from './watch-recap.mjs';
+import {watchPreview} from './watch-preview.mjs';
 const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash});
-const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),api=createApi({season,board,paper,social});
+const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps});
 export async function launchTick(env){
  const result=await tickPaper(env,{rulesHash:paperRules.ruleHash});
  if(result.busy)return result;
@@ -18,6 +20,7 @@ export async function launchTick(env){
 }
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
+ if(url.pathname.startsWith(base+'/watch/'))return watchPreview(request,env,{paper,base});
  if(url.pathname.startsWith(base+'/api/')){
   const path=url.pathname.slice(base.length),origin=env.APP_ORIGIN||'https://arwyn.party';
   url.pathname=path;
