@@ -5,8 +5,17 @@ import {createArcadeBoard} from './arcade-board.mjs';
 import {demoFetch,demoHeaders} from './demo-worker.mjs';
 import {createPaperService,tickPaper} from './paper-service.mjs';
 import paperRules from '../build/public/paper-rules.json' with {type:'json'};
-const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper});
-export function launchTick(env){return tickPaper(env,{rulesHash:paperRules.ruleHash});}
+import tideRules from '../build/public/tide-rules.json' with {type:'json'};
+import {createFleetSocialService} from './fleet-social-service.mjs';
+import {tickTide} from './daily-tide.mjs';
+const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash});
+const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),api=createApi({season,board,paper,social});
+export async function launchTick(env){
+ const result=await tickPaper(env,{rulesHash:paperRules.ruleHash});
+ if(result.busy)return result;
+ const tide=await tickTide(env,{paperHash:paperRules.ruleHash,rulesHash:tideRules.ruleHash});
+ return {...result,tide};
+}
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
  if(url.pathname.startsWith(base+'/api/')){

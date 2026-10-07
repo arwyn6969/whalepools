@@ -7,6 +7,7 @@ export function database(filename=':memory:') {
   sql.exec(readFileSync(new URL('../migrations/0003_arcade.sql',import.meta.url),'utf8'));
   sql.exec(readFileSync(new URL('../migrations/0004_arcade_revisions.sql',import.meta.url),'utf8'));
   sql.exec(readFileSync(new URL('../migrations/0005_paper.sql',import.meta.url),'utf8'));
+  sql.exec(readFileSync(new URL('../migrations/0006_daily_tide.sql',import.meta.url),'utf8'));
   const runs=new WeakMap();
   const prepare=query=>{let params=[];const run=()=>{const result=sql.prepare(query).run(...params);return {success:true,meta:{changes:Number(result.changes)}};};const stmt={bind(...values){params=values;return stmt;},async first(){return sql.prepare(query).get(...params)||null;},async all(){return {results:sql.prepare(query).all(...params)};},async run(){return run();}};runs.set(stmt,run);return stmt;};
   // Keep the synchronous SQLite transaction together, matching D1's atomic batch
