@@ -12,6 +12,7 @@ import {installNextSprint} from './next-sprint.mjs';
 import {installFleetSocial} from './fleet-social.mjs';
 import {installPaper} from './paper.mjs';
 import {watchPath} from './paper-share.mjs';
+import {signInLanding} from './auth-journey.mjs';
 const walletDiscovery=discoverWallets(window);
 const pickWallet=createWalletPicker(window,document,{wallets:walletDiscovery});
 const $=s=>document.querySelector(s);
@@ -34,9 +35,9 @@ try{const saved=localStorage.getItem('whale-pools-sandbox-v1');if(saved)roster=v
 let crewWallet=null,crewRules=null,ownedWhales=[],ownedLoaded=false,ownedLoading=false,ownedError='',inventoryRevision=0,inventoryController,inventoryProgress='',spectator=null,draftResult=null,draftStorageStatus='',uncertainAction=null;
 let walletController=new AbortController(),logoutPending=Promise.resolve();
 const nextSprint=installNextSprint({asset,api,avatar,hydrateArt,privateResult:()=>draftResult,inspectCompany,walletReady:()=>({ready:walletReady&&ownedLoaded&&ownedWhales.length>0,published:!!club?.me?.seat})});
-const liveContext=()=>({address:club?.me?.address??null,ready:walletReady&&ownedLoaded,whales:ownedWhales});
-const live=installFleetSocial({api,context:liveContext});
-const paper=installPaper({api,asset,avatar,hydrateArt,context:liveContext,social:live});
+const liveContext=()=>({address:club?.me?.address??null,ready:walletReady&&ownedLoaded,whales:ownedWhales,inventoryLoading:ownedLoading,inventoryError:ownedError,inventoryProgress,connecting:busy,walletReady});
+const live=installFleetSocial({api,context:liveContext,signIn,refreshInventory:loadOwnedWhales});
+const paper=installPaper({api,asset,avatar,hydrateArt,context:liveContext,social:live,signIn,refreshInventory:loadOwnedWhales});
 const displayedRoster=()=>spectator?.agents||roster;
 const draftStorage={getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)};
 const watchedProviders=new WeakSet();
@@ -303,7 +304,7 @@ async function logout(){
 async function signIn(){
  if(club?.demo){location.hash='seat';return;}
  if(!club){message('Arcade status could not load. Use Retry connection, then sign in.');$('#retry-status').hidden=false;return;}
- if(busy)return;busy=true;message('');
+ if(busy)return;const entry=location.href;busy=true;message('');renderOwnedWhales();
  try{
   try{await logoutPending;}catch{await api('/api/auth/logout',{});logoutPending=Promise.resolve();}
   const wallet=await pickWallet();if(!wallet)return;watchProvider(wallet.provider);
@@ -319,7 +320,7 @@ async function signIn(){
   const signature=await walletRequest({method:'personal_sign',params:[encoded,addresses[0]]});
   const current=await walletRequest({method:'eth_accounts'});if(epoch!==walletRevision||current?.[0]?.toLowerCase()!==addresses[0].toLowerCase()||Number(await walletRequest({method:'eth_chainId'}))!==CHAIN_ID)throw Error('The wallet changed during sign-in. Please reconnect.');
   await api('/api/auth/verify',{id:challenge.id,signature},'POST',signal);
-  if(epoch!==walletRevision)return;walletReady=true;await refreshClub();if(epoch===walletRevision)location.hash='seat';
+  if(epoch!==walletRevision)return;walletReady=true;await refreshClub();if(epoch===walletRevision){const landing=signInLanding(entry,location.href);if(landing)location.hash=landing;}
  }catch(e){if(e.name!=='AbortError')message(e.code===4001?'Wallet request cancelled. Your draft is kept; sign in when ready.':e.name==='TimeoutError'?'Sign-in took too long. Close any old wallet request, then try again.':e.message||'Wallet sign-in failed.');}
  finally{busy=false;renderClub();renderOwnedWhales();renderAgents();renderInspector();updateRegistrationRoster();}
 }
