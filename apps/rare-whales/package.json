@@ -26,7 +26,9 @@
     "paper:research": "node scripts/paper-research.mjs",
     "test:recap:browser": "node --experimental-sqlite scripts/check-watch-recaps.mjs",
     "paper:readiness": "node scripts/live-readiness.mjs",
-    "test:sharing:browser": "node --experimental-sqlite scripts/check-saved-day.mjs"
+    "test:sharing:browser": "node --experimental-sqlite scripts/check-saved-day.mjs",
+    "test:controls:browser": "node --experimental-sqlite scripts/check-watch-controls.mjs",
+    "holder:acceptance": "node scripts/holder-acceptance.mjs"
   },
   "dependencies": {
     "viem": "^2.55.0"

@@ -4,6 +4,7 @@ import {downloadLocal} from './fleet-social.mjs';
 import {installRecorderCoverage} from './recorder-coverage.mjs';
 import {installWatchRecaps} from './watch-recap.mjs';
 import {loadPaperDraft,savePaperDraft,reconcilePaperDraft} from './paper-draft.mjs';
+import {stopReview,followUpMessage} from './watch-controls.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>'$'+Number(n).toFixed(2),pct=n=>(n>=0?'+':'')+Number(n).toFixed(3)+'%';
@@ -22,7 +23,15 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
  const arcadeRibbon=$('.demo-ribbon').innerHTML,arcadeFooter=$('footer>span').textContent;
  let active=false,viewId=null,viewDay=null,openedDay=false,epoch=0,timer,data=null,loading=false,acting=false,wallet=null,whaleKey='',mutation=null,research=null;
  const storage={getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)};
- let draftScope=null,draft=null,draftStatus='',draftNotice='';
+ let draftScope=null,draft=null,draftStatus='',draftNotice='',knownRunId=null;
+ const stopDialog=$('#paper-stop-review');let stopIntent=null;
+ function closeStopReview(){stopIntent=null;if(stopDialog.open)stopDialog.close();}
+ function renderStopReview(run){
+  const review=stopReview(run,context().address);
+  if(!review||review.id!==stopIntent?.id||review.wallet!==stopIntent?.wallet||!context().walletReady||!active||viewId){closeStopReview();return;}
+  $('#paper-stop-name').textContent=review.nickname;
+  $('#paper-stop-summary').textContent=`Last saved balance ${money(review.equity)} · last valuation ${stamp(review.lastValuation)}. ${review.positions} open paper position${review.positions===1?'':'s'} · ${review.queued} queued order${review.queued===1?'':'s'}.`;
+ }
  function saveSetup(){
   if(!active||!draftScope||!draft||viewId)return;
   const result=savePaperDraft(storage,wallet,data.rulesHash,draft);
@@ -32,7 +41,7 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
  function controls(){
   $('#paper-launch').hidden=!!viewId;$('#paper-presets').hidden=!!viewId;
   const c=context(),next=c.address;
-  if(next!==wallet){wallet=next;draftScope=null;draft=null;draftStatus='';draftNotice='';whaleKey='';mutation=null;$('#paper-name').value='My Whale Watch';$('#paper-style').value='balanced';$('#paper-consent').checked=false;$('#paper-message').textContent='';}
+  if(next!==wallet){wallet=next;draftScope=null;draft=null;draftStatus='';draftNotice='';whaleKey='';mutation=null;knownRunId=null;$('#paper-name').value='My Whale Watch';$('#paper-style').value='balanced';$('#paper-consent').checked=false;$('#paper-message').textContent='';}
   const scope=next&&data?.rulesHash?next+':'+data.rulesHash:null;
   if(scope&&scope!==draftScope){
    draftScope=scope;const saved=loadPaperDraft(storage,next,data.rulesHash);
@@ -47,8 +56,13 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
    else{const reconciled=reconcilePaperDraft(draft,c.whales);if(reconciled.removed){draft=reconciled.draft;draftNotice=`${reconciled.removed} selected whale${reconciled.removed===1?' is':'s are'} no longer in this wallet. Your name and style are kept; review your crew before publishing.`;saveSetup();}}
   }
   const own=data?.me?.address===c.address?data.me?.run:null,running=own?.status==='running';
+  // An acknowledged record ends that Start request, including response-loss recovery.
+  // The next record needs a fresh request ID and explicit publication consent.
+  if(own?.id&&own.id!==knownRunId){knownRunId=own.id;mutation=null;$('#paper-consent').checked=false;}
   $('#paper-fields').disabled=acting||!data?.enabled||!c.ready||!c.whales.length||running;
-  $('#paper-stop').hidden=!running;$('#paper-stop').disabled=acting;
+  $('#paper-stop').hidden=!running;$('#paper-stop').disabled=acting||!c.walletReady;
+  $('#paper-next-watch').textContent=followUpMessage(own);$('#paper-next-watch').hidden=!$('#paper-next-watch').textContent;
+  if(stopIntent)renderStopReview(own);
   $('#paper-connect').hidden=!!next&&c.walletReady;$('#paper-connect').disabled=c.connecting;$('#paper-connect').textContent=c.connecting?'WAITING FOR WALLET…':next?'RECONNECT THIS WALLET':'SIGN IN WITH YOUR WALLET';
   $('#paper-inventory-refresh').hidden=!next;$('#paper-inventory-refresh').disabled=c.connecting||c.inventoryLoading||acting;
   $('#paper-eligibility').textContent=!next?'One Rare Whales or WhaleStreet NFT is enough. Sign in here to find your whales; no historical company is required.':c.inventoryLoading?(c.inventoryProgress||'Checking your whales… Your private choices are kept.'):c.inventoryError?c.inventoryError+' Your live setup is kept. Use Refresh my whales to retry.':!c.walletReady?'Reconnect this wallet to verify ownership. Your private choices are kept.':!c.ready?'Refresh my whales to finish checking ownership.':running?'Your dated crew and rules are locked. Stop this watch to choose another style.':!c.whales.length?'No eligible whales found in this wallet. One NFT from either collection is enough; refresh after receiving one.':`${c.whales.length} owned whales available. Choose up to twelve, select a ready-made style, then publish a $1,000 simulated watch.`;
@@ -112,16 +126,32 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
   acting=true;const input={wallet:address,nickname:$('#paper-name').value,preset:$('#paper-style').value,agents:selected,rulesHash:data.rulesHash,publish:$('#paper-consent').checked};
   const fingerprint=JSON.stringify(input);if(mutation?.fingerprint!==fingerprint)mutation={fingerprint,id:crypto.randomUUID()};
   social.startAttempt();controls();$('#paper-message').textContent='Checking ownership and starting a new forward record…';
-  try{const result=await api('/api/paper/start',{...input,mutationId:mutation.id});if(address!==context().address)return;social.started(result.run);$('#paper-message').textContent='Your paper watch is saved. The next new candles grow its record, even while you are away.';}
+  try{const result=await api('/api/paper/start',{...input,mutationId:mutation.id});if(address!==context().address)return;knownRunId=result.run.id;mutation=null;$('#paper-consent').checked=false;if(result.run.status==='running'){social.started(result.run);$('#paper-message').textContent='Your paper watch is saved. The next new candles grow its record, even while you are away.';}else $('#paper-message').textContent='This request is already saved as a frozen dated record. Review it in My dated watches; a new Start creates a separate watch.';}
   catch(error){if(address===context().address){social.startError();$('#paper-message').textContent=error.uncertain?'The response did not arrive. Refresh to check your saved run; retrying the unchanged request is safe.':error.message;}}
   finally{acting=false;clearTimeout(timer);await load();controls();}
  });
- $('#paper-stop').addEventListener('click',async()=>{
-  if(acting||!data?.me?.run)return;const address=context().address,id=data.me.run.id;acting=true;controls();
-  try{await api('/api/paper/stop',{id,wallet:address});if(address===context().address)$('#paper-message').textContent='Watch stopped. Its dated public record is kept; the balance is its last valuation. You can start a new crew.';}
-  catch(e){if(address===context().address)$('#paper-message').textContent=e.message+' Refresh to check the saved status before trying again.';}
-  finally{acting=false;clearTimeout(timer);await load();controls();}
+ $('#paper-stop').addEventListener('click',()=>{
+  if(acting||!context().walletReady||!active||viewId)return;
+  const review=stopReview(data?.me?.run,context().address);if(!review)return;
+  stopIntent={id:review.id,wallet:review.wallet};renderStopReview(data.me.run);stopDialog.showModal();$('#paper-stop-cancel').focus();
+ });
+ $('#paper-stop-cancel').addEventListener('click',closeStopReview);
+ stopDialog.addEventListener('cancel',event=>{event.preventDefault();closeStopReview();});
+ stopDialog.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  const cancel=$('#paper-stop-cancel'),confirm=$('#paper-stop-confirm');
+  if(event.shiftKey&&document.activeElement===cancel){event.preventDefault();confirm.focus();}
+  else if(!event.shiftKey&&document.activeElement===confirm){event.preventDefault();cancel.focus();}
+ });
+ stopDialog.addEventListener('close',()=>{stopIntent=null;});
+ $('#paper-stop-confirm').addEventListener('click',async()=>{
+  const review=stopReview(data?.me?.run,context().address);
+  if(acting||!context().walletReady||!active||viewId||!review||review.id!==stopIntent?.id||review.wallet!==stopIntent?.wallet){closeStopReview();return;}
+  const address=review.wallet,id=review.id;let uncertain=false;closeStopReview();acting=true;controls();$('#paper-message').textContent='Stopping this dated watch…';
+  try{const result=await api('/api/paper/stop',{id,wallet:address});if(address===context().address)$('#paper-message').textContent=(result.run?.status==='completed'?'This watch had already finished.':'Watch stopped.')+' Its dated public record is kept; the balance is its last valuation. You can start a new crew.';}
+  catch(e){uncertain=!!e.uncertain;if(address===context().address)$('#paper-message').textContent=(uncertain?'The Stop response did not arrive.':e.message)+' Refresh to check the saved status before trying again.';}
+  finally{acting=false;clearTimeout(timer);await load();controls();if(uncertain&&address===context().address&&data?.me?.address===address&&data.me.run?.id===id&&data.me.run.status==='stopped')$('#paper-message').textContent='Stop confirmed from your saved record. Its dated balance is frozen; you can start a new crew.';}
  });
  if(!location.hash&&!watchPath(location.pathname))api('/api/paper').then(result=>{if(result.enabled&&!location.hash&&!watchPath(location.pathname))location.hash='paper';}).catch(()=>{});
- return {sync(){const changed=context().address!==wallet;if(changed){recaps.invalidate(true);coverage.invalidate();epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();},route(show,id){recaps.invalidate();coverage.invalidate();active=show;viewId=id;viewDay=id===watchPath(location.pathname)&&!location.hash?validRecapDate(new URLSearchParams(location.search).get('day')):null;openedDay=false;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
+ return {sync(){const changed=context().address!==wallet;if(changed){closeStopReview();recaps.invalidate(true);coverage.invalidate();epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();},route(show,id){closeStopReview();recaps.invalidate();coverage.invalidate();active=show;viewId=id;viewDay=id===watchPath(location.pathname)&&!location.hash?validRecapDate(new URLSearchParams(location.search).get('day')):null;openedDay=false;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
 }
