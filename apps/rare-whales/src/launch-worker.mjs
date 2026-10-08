@@ -9,9 +9,11 @@ import tideRules from '../build/public/tide-rules.json' with {type:'json'};
 import {createFleetSocialService} from './fleet-social-service.mjs';
 import {tickTide} from './daily-tide.mjs';
 import {createWatchRecaps} from './watch-recap.mjs';
+import {createRecorderCoverage} from './recorder-coverage.mjs';
+import {observeScheduled} from './recorder-observer.mjs';
 import {watchPreview} from './watch-preview.mjs';
 const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash});
-const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps});
+const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),recorder=createRecorderCoverage({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps,recorder});
 export async function launchTick(env){
  const result=await tickPaper(env,{rulesHash:paperRules.ruleHash});
  if(result.busy)return result;
@@ -30,4 +32,5 @@ export async function launchFetch(request,env){
  }
  return demoFetch(request,env);
 }
-export default {fetch:launchFetch,scheduled(_controller,env,ctx){ctx.waitUntil(launchTick(env));}};
+export function launchScheduled(controller,env,ctx){ctx.waitUntil(observeScheduled(controller,env,{tick:launchTick}));}
+export default {fetch:launchFetch,scheduled:launchScheduled};

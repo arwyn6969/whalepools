@@ -35,6 +35,14 @@ try{
  const loadStart=Date.now();for(let i=0;i<2;i++){clock+=R.interval;const result=await (await mf.dispatchFetch('https://arwyn.party/__test/tick',{headers:{'fixture-now':String(clock)}})).json();assert.equal(result.error,undefined);assert.equal(result.runs,23);}
  const loadFills=(await db.prepare("SELECT COUNT(*) AS n FROM wp_paper_events WHERE run_id LIKE 'load-%'").first()).n;assert.equal(loadFills,240);
  console.log(JSON.stringify({event:'paper-full-cohort-runtime-fixture',holderRuns:20,whalesPerHolder:12,filledOrders:loadFills,twoTicksWallMs:Date.now()-loadStart,realMarket:false,realWallet:false}));
+ // Long saved histories are the relevant launch load; a short warmup-only
+ // fixture cannot establish capacity near the end of a fourteen-day watch.
+ const longStart=clock-3800*R.interval,grown=initialState(agents,longStart,Math.floor(clock/R.interval)*R.interval-R.interval);
+ grown.history=Array.from({length:3800},(_,i)=>({t:longStart+(i+1)*R.interval,observedAt:longStart+(i+1)*R.interval+1000,equity:1000,hold:1000,price:200,actionable:true}));grown.observedBars=3800;
+ await db.prepare("UPDATE wp_paper_runs SET state_json=? WHERE id LIKE 'load-%'").bind(JSON.stringify(grown)).run();
+ const longTickStart=Date.now();clock+=R.interval;const longResult=await (await mf.dispatchFetch('https://arwyn.party/__test/tick',{headers:{'fixture-now':String(clock)}})).json();assert.equal(longResult.error,undefined);assert.equal(longResult.runs,23);
+ const longState=JSON.parse((await db.prepare("SELECT state_json FROM wp_paper_runs WHERE id='load-0'").first()).state_json);assert.equal(longState.history.length,3801);assert.equal(longState.history.at(-1).actionable,true);
+ console.log(JSON.stringify({event:'paper-long-history-runtime-fixture',holderRuns:20,whalesPerHolder:12,savedClosesPerHolder:3800,tickWallMs:Date.now()-longTickStart,actualWorkerd:true,cloudflarePlanCpuLimitSimulated:false,realMarket:false,realWallet:false}));
  await db.prepare("UPDATE wp_paper_runs SET status='stopped' WHERE id LIKE 'load-%'").run();
  const token='22'.repeat(32),address='0x'+'2'.repeat(40),hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex'),id=data.labs[0].id;
  await db.prepare('INSERT INTO rw_sessions(hash,address,expires) VALUES(?,?,?)').bind(hash,address,Date.now()+60000).run();await db.prepare('UPDATE wp_paper_runs SET wallet=? WHERE id=?').bind(address,id).run();

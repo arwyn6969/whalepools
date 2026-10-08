@@ -1,6 +1,16 @@
 # Whale Pools current development status
 
-Updated 7 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
+Updated 8 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
+
+## Recorder reliability and coverage candidate
+
+`codex/recorder-reliability`, stacked on onboarding head `2bfa1af`: read-only daily candle receipt and all-three-preset decision coverage, recoverable UTC snapshots, immediate partial-round explanation, shared scheduled failure reporting and a bounded fourteen-day evidence export. A fresh feed no longer conceals an interrupted watch. Frozen execution and all rules/ownership/DNA/locks are intact; no migration or production edit.
+
+165 unit tests, 23 assets, three actual workerd/D1 suites and 87 fixture browser scenarios pass. Scheduled success and caught-error failure are verified in the compiled Worker; full-cohort runtime also covers 3,800 saved closes per holder. Desktop/mobile and native evidence, exact committed PR/CI/deployment receipts are saved in planning `reviews/2026-10-08/recorder-reliability/`. Fixtures do not establish real eligible-holder acceptance or Cloudflare free-plan capacity.
+
+The real overnight rehearsal found 13 unusable closes despite timely receipts. Inspected staging invocations confirm `exceededCpu` on Workers Free (10 ms cron CPU allowance). This is a launch blocker requiring an owner runtime-capacity/billing decision; no subscription was changed. Not every gap's cause is individually established. Preserve the partial records and begin evidence of consecutive clean full days after capacity is addressed. No actual complete Tide or real seven-day pilot has yet qualified.
+
+[Review/restart and capacity decision](docs/RECORDER_RELIABILITY_REVIEW.md), [staging](https://whale-pools-paper-staging.mrarwyn.workers.dev/whalepools/#paper), [local real-price preview](http://127.0.0.1:48385/whalepools/#paper), [disposable holder preview](http://127.0.0.1:48386/#paper). Real desktop/mobile signing, historical publish/edit/withdraw, paper Start/Stop/follow-up/archive/Tide, share acceptance, maintenance/consent and ten-holder pilot remain open. Production, WWAX and Vector Desk remain separate.
 
 ## Live onboarding and return candidate
 
