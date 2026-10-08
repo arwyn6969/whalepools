@@ -2,6 +2,16 @@
 
 Updated 8 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
+## Holder controls and launch acceptance candidate
+
+`codex/holder-acceptance-ready`, stacked on saved-day head `992024c`: named Stop review with the latest saved valuation, positions/queued orders, initial Keep watching focus, Escape/cancel and keyboard containment. Wallet/navigation/run changes discard the intent. A lost Stop response reconciles saved status. Acknowledged Start, including recovery from the owner read, clears the request ID and consent: unchanged follow-ups now create a new dated watch, with fresh publication consent, instead of returning an old stopped record. Frozen watches explain the next crew/style and private archive.
+
+190 unit tests, frozen 23-asset build, four actual workerd/D1/SQLite DO suites, both deployment dry runs and all 114 desktop/mobile browser fixture scenarios pass: 13 new controls, 14 holder journey, 11 sharing/challenge, 11 paper, 10 social, 12 recap, 15 onboarding, 14 recorder and 14 saved-day sharing. Native CSS 1440×1000/390×844 review/cancel/confirmed Stop and fresh-consent rendering pass with no captured warning/error logs. Wallet signatures/ownership/candles in those control checks are disposable fixtures, not actual eligible-holder acceptance.
+
+[Operator review/restart/rollback](docs/HOLDER_ACCEPTANCE_REVIEW.md) adds a bounded private acceptance template/readout tied to exact candidate/environment/rules. Its eighteen desktop/mobile/operator checks begin pending; fixture evidence cannot close real checks. Wrong/future/stale context, duplicate/missing checks and extra identity fields are rejected. Manual declarations cannot prove identity or social delivery and never approve production or count pilot returns. Exact final head/PR/CI/staging/screenshots are saved in planning `reviews/2026-10-08/holder-acceptance-ready/`.
+
+No server execution/rule/DNA/ownership, dependency/contract lock, recorder configuration, D1/DO migration/reset/restore, billing or production change. Free-plan staging retains original watches/Tide and interruptions. Actual desktop/mobile signing/inventory, historical publish/edit/withdraw, live controls/share destination, elapsed clean days/complete Tide, remote Free cohort/quotas and maintenance/consent remain open. Zero real pilot participants/invitations/posts; Safe Harbour remains an unenabled separate brief. WWAX deferred; Vector Desk separate.
+
 ## Saved-day sharing and pilot preparation candidate
 
 `codex/saved-day-sharing`, stacked on Free recorder head `588665c`: a specific UTC day has a canonical public destination, automatic recap landing, dated server metadata/no-JavaScript fallback and PNG/SVG snapshot. Native share is click-triggered with cancellation and copy/manual recovery. Visitors and stale wallet/route/day replies preserve private work. Automatic landing and share outputs never count as a meaningful pilot return; existing explicit own-watch review rules remain intact. A local participant panel explains Start/help/return progress and the seven-day deadline.
