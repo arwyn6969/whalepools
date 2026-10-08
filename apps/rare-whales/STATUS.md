@@ -2,6 +2,14 @@
 
 Updated 8 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
+## Saved-day sharing and pilot preparation candidate
+
+`codex/saved-day-sharing`, stacked on Free recorder head `588665c`: a specific UTC day has a canonical public destination, automatic recap landing, dated server metadata/no-JavaScript fallback and PNG/SVG snapshot. Native share is click-triggered with cancellation and copy/manual recovery. Visitors and stale wallet/route/day replies preserve private work. Automatic landing and share outputs never count as a meaningful pilot return; existing explicit own-watch review rules remain intact. A local participant panel explains Start/help/return progress and the seven-day deadline.
+
+180 tests, 23 assets, four actual runtime suites, both dry runs and 51 desktop/mobile fixture scenarios pass: 14 new day-sharing, 12 recap, 10 social and 15 onboarding. Native desktop/mobile fit and the real saved-day PNG download pass. Native OS share behaviour is simulated; real eligible-wallet signing, device/destination delivery and measured participants remain open. Exact final commit/PR/CI/staging/screenshots are saved in planning `reviews/2026-10-08/saved-day-sharing/`.
+
+[Review/restart/rollback](docs/SAVED_DAY_SHARING_REVIEW.md), [pilot organiser pack](docs/LIVE_PILOT_ORGANISER_PACK.md), [proposed Safe Harbour brief](docs/PROSPECTIVE_CHALLENGE_BRIEF.md). The challenge is a separate prospective design brief, not enabled. Existing DO/D1, six migrations, original records and partial coverage are preserved; no migration/restore, billing/subscription, production, frozen rules/DNA/ownership or lock change. Full-day reliability/Free quotas, real-holder acceptance and ten-holder/five-interview/seven-day pilot remain open. WWAX is deferred; Vector Desk separate.
+
 ## Free-plan Durable Object recorder candidate
 
 `codex/free-durable-recorder`, stacked on recorder head `c870ffa`: the owner chose Free-plan optimisation and accepts visible downtime during the proof. The minute cron makes a thin RPC; a SQLite-backed market/rules coordinator runs the unchanged engine against existing D1. Persistent successful-minute suppression, shared concurrent work and two attempts per minute survive reconstruction. Failure/busy never qualify as completion. Missing binding/invalid mode fail closed; explicit pause/direct modes support safe diagnosis. No alarms or continuously active timers.

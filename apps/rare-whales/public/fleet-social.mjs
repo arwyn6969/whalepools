@@ -1,4 +1,4 @@
-import {createLivePilot} from './live-pilot.mjs';
+import {createLivePilot,livePilotProgress} from './live-pilot.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stamp=t=>t?new Date(t).toISOString().slice(0,16).replace('T',' ')+' UTC':'not observed yet';
@@ -17,6 +17,8 @@ export function installFleetSocial({api,context,signIn,refreshInventory}){
   const {state,unavailable}=pilot.status();
   $('#live-pilot-start').hidden=!!state;$('#live-pilot-controls').hidden=!state;$('#live-pilot-code').disabled=!!state;
   $('#live-pilot-assistance').checked=state?.assisted??false;$('#live-pilot-stop').disabled=!state?.active;
+  $('#live-pilot-progress').hidden=!state;
+  if(state){try{const progress=livePilotProgress(state);$('#live-pilot-progress').innerHTML='<h3>YOUR PILOT PROGRESS</h3><ol><li>'+esc(progress.start)+'</li><li>'+esc(progress.returned)+'</li></ol><p>'+esc(progress.next)+'</p><p class="muted">Progress comes from your local report. Export only if you choose.</p>';}catch{$('#live-pilot-progress').textContent='Report timing cannot be assessed on this device. Check its clock; your report and company are kept.';}}
   $('#live-pilot-status').textContent=unavailable?'Browser storage is unavailable. Your report may not survive a reload; company controls still work.':state?state.code+' · '+(state.events.length>=500?'report full':state.active?'recording':'stopped')+' · '+state.events.length+' events · expires '+stamp(state.expiresAt):'Recording is off. Start only with an assigned participant code, before your first live company.';
  }
  function event(type){pilot.record(type);renderPilot();}

@@ -1,5 +1,5 @@
 import {requestJSON} from './request.mjs';
-import {paperURL,paperCard,paperPNG,watchPath} from './paper-share.mjs';
+import {paperURL,paperCard,paperPNG,watchPath,validRecapDate} from './paper-share.mjs';
 import {downloadLocal} from './fleet-social.mjs';
 import {installRecorderCoverage} from './recorder-coverage.mjs';
 import {installWatchRecaps} from './watch-recap.mjs';
@@ -18,9 +18,9 @@ function curve(history){
 export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,refreshInventory}){
  let shownRuns=new Map();
  const coverage=installRecorderCoverage({root:$('#paper-coverage'),api});
- const recaps=installWatchRecaps({root:$('#paper-fleet'),api,address:()=>context().address,onRead:r=>{const run=shownRuns.get(r.id);return run?.owner===context().address&&r.lastValuation?social.review({...run,history:[{t:r.lastValuation}]}):false;}});
+ const recaps=installWatchRecaps({root:$('#paper-fleet'),api,address:()=>context().address,nickname:id=>shownRuns.get(id)?.nickname??'Whale watch',onShare:()=>social.shared(),onRead:r=>{const run=shownRuns.get(r.id);return run?.owner===context().address&&r.lastValuation?social.review({...run,history:[{t:r.lastValuation}]}):false;}});
  const arcadeRibbon=$('.demo-ribbon').innerHTML,arcadeFooter=$('footer>span').textContent;
- let active=false,viewId=null,epoch=0,timer,data=null,loading=false,acting=false,wallet=null,whaleKey='',mutation=null,research=null;
+ let active=false,viewId=null,viewDay=null,openedDay=false,epoch=0,timer,data=null,loading=false,acting=false,wallet=null,whaleKey='',mutation=null,research=null;
  const storage={getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)};
  let draftScope=null,draft=null,draftStatus='',draftNotice='';
  function saveSetup(){
@@ -78,6 +78,7 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
    if(!research){try{research=await requestJSON(asset('/paper-research.json'));}catch{/* A failed research read never hides the live fleet. */}}
    if(viewId&&result.enabled)rival=(await api('/api/paper/run/'+encodeURIComponent(viewId))).run;
    if(n!==epoch||address!==context().address)return;data=result;social.updatePaper(result);render(rival);
+   if(viewId&&viewDay&&!openedDay){openedDay=true;await recaps.open(viewId,viewDay);}
   }catch(e){if(n===epoch){$('#paper-feed').textContent='Could not refresh the fleet. '+e.message+' Your saved run stays on the server; try Refresh fleet.';}}
   finally{loading=false;$('#paper-refresh').disabled=false;if(active)timer=setTimeout(load,n===epoch?30000:0);}
  }
@@ -122,5 +123,5 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
   finally{acting=false;clearTimeout(timer);await load();controls();}
  });
  if(!location.hash&&!watchPath(location.pathname))api('/api/paper').then(result=>{if(result.enabled&&!location.hash&&!watchPath(location.pathname))location.hash='paper';}).catch(()=>{});
- return {sync(){const changed=context().address!==wallet;if(changed){recaps.invalidate(true);coverage.invalidate();epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();},route(show,id){recaps.invalidate();coverage.invalidate();active=show;viewId=id;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
+ return {sync(){const changed=context().address!==wallet;if(changed){recaps.invalidate(true);coverage.invalidate();epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();},route(show,id){recaps.invalidate();coverage.invalidate();active=show;viewId=id;viewDay=id===watchPath(location.pathname)&&!location.hash?validRecapDate(new URLSearchParams(location.search).get('day')):null;openedDay=false;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
 }

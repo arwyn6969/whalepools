@@ -25,7 +25,8 @@
     "pilot:live:readout": "node scripts/live-pilot-readout.mjs",
     "paper:research": "node scripts/paper-research.mjs",
     "test:recap:browser": "node --experimental-sqlite scripts/check-watch-recaps.mjs",
-    "paper:readiness": "node scripts/live-readiness.mjs"
+    "paper:readiness": "node scripts/live-readiness.mjs",
+    "test:sharing:browser": "node --experimental-sqlite scripts/check-saved-day.mjs"
   },
   "dependencies": {
     "viem": "^2.55.0"
