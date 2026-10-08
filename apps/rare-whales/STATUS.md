@@ -2,6 +2,14 @@
 
 Updated 8 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
+## Free-plan Durable Object recorder candidate
+
+`codex/free-durable-recorder`, stacked on recorder head `c870ffa`: the owner chose Free-plan optimisation and accepts visible downtime during the proof. The minute cron makes a thin RPC; a SQLite-backed market/rules coordinator runs the unchanged engine against existing D1. Persistent successful-minute suppression, shared concurrent work and two attempts per minute survive reconstruction. Failure/busy never qualify as completion. Missing binding/invalid mode fail closed; explicit pause/direct modes support safe diagnosis. No alarms or continuously active timers.
+
+172 unit tests, a frozen 23-asset build, four runtime suites, both deployment dry runs and 14 recorder desktop/mobile fixtures pass. The new actual workerd/SQLite DO/D1 suite verifies 20 × 12 crews/240 fills, 3,800-close histories, complete restart, bounded failures/recovery and no retrospective fills. It is synthetic clock/market/ownership coverage, not deployed Free CPU or real-wallet acceptance. The normal production entry stays separate; only staging adds `recorder-sqlite-v1`, a namespace migration, not D1 migration/restore. Account dashboard confirms Workers Free; no purchase or billing change. Exact final deployed/CI/evidence outcomes are saved in planning `reviews/2026-10-08/free-durable-recorder/`.
+
+[Review/cost bounds/restart/rollback](docs/FREE_DURABLE_RECORDER_REVIEW.md). Keep the existing interrupted records and collect fresh real observations/full clean days after the cutover. Free account-wide quotas, ordinary API CPU, real-holder signing/publish/edit/withdraw/live controls, complete Tide, maintenance/consent, sharing and measured pilot remain open. Production unchanged; paper/Tide/historical/DNA/ownership/locks preserved; WWAX deferred, Vector Desk separate.
+
 ## Recorder reliability and coverage candidate
 
 `codex/recorder-reliability`, stacked on onboarding head `2bfa1af`: read-only daily candle receipt and all-three-preset decision coverage, recoverable UTC snapshots, immediate partial-round explanation, shared scheduled failure reporting and a bounded fourteen-day evidence export. A fresh feed no longer conceals an interrupted watch. Frozen execution and all rules/ownership/DNA/locks are intact; no migration or production edit.

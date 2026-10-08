@@ -11,4 +11,8 @@ for(const name of demoPaths){if(name==='/')continue;const data=await readFile(pa
 const entry=`import {launchFetch,launchScheduled} from '../src/launch-worker.mjs';\nconst assets=${JSON.stringify(assets)};\nexport default {scheduled:launchScheduled,fetch(request,env){return launchFetch(request,{...env,ASSETS:{fetch:async request=>{const asset=assets[new URL(request.url).pathname];if(!asset)return new Response('Not found',{status:404});const bytes=request.method==='HEAD'?null:Uint8Array.from(atob(asset.gzip),c=>c.charCodeAt(0));return new Response(bytes,{headers:{'content-type':asset.type,'content-encoding':'gzip'}});}}});}};\n`;
 await writeFile(path.join(app,'build/demo-entry.mjs'),entry);
 await build({entryPoints:[path.join(app,'build/demo-entry.mjs')],outfile:path.join(app,'build/cloudflare-worker.mjs'),bundle:true,format:'esm',platform:'browser',target:'es2022',minify:true});
+// Only the isolated paper candidate exports/creates a Durable Object. The
+// existing production configuration and Node asset checker keep their entry.
+await writeFile(path.join(app,'build/paper-entry.mjs'),"export {PaperRecorder} from '../src/durable-recorder.mjs';\n"+entry);
+await build({entryPoints:[path.join(app,'build/paper-entry.mjs')],outfile:path.join(app,'build/paper-worker.mjs'),bundle:true,format:'esm',platform:'browser',target:'es2022',external:['cloudflare:workers'],minify:true});
 console.log('Self-contained Cloudflare arcade/paper Worker bundled; '+Object.keys(assets).length+' explicit assets.');

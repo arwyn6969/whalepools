@@ -13,7 +13,7 @@
     "deploy:check": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
     "build:demo": "npm run build && node scripts/bundle-demo.mjs && node scripts/check-demo.mjs",
-    "test:runtime": "node scripts/check-runtime.mjs && node scripts/check-paper-runtime.mjs && node scripts/check-social-runtime.mjs",
+    "test:runtime": "node scripts/check-runtime.mjs && node scripts/check-paper-runtime.mjs && node scripts/check-social-runtime.mjs && node scripts/check-durable-runtime.mjs",
     "contracts:build": "node scripts/compile-contracts.mjs",
     "contracts:test": "node scripts/test-contracts.mjs",
     "launch:prepare": "npm run contracts:build && node scripts/prepare-launch.mjs",
