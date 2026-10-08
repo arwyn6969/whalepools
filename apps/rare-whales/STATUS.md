@@ -2,6 +2,14 @@
 
 Updated 8 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
+## Company return story candidate
+
+`codex/watch-return-story`, stacked on holder-controls head `ef1ee05`: an optional explicit local bookmark turns a later visit into a saved balance/counters comparison, with current preset reasons and a direct latest daily recap. Timely receipts, closed trades and gaps stay distinct; marked change is not realized profit. A running holder sees the company instead of locked setup; stopping restores it. Expanded preset explanations survive refresh and reconnect readiness redraws the private panel immediately.
+
+202 tests, frozen 23 assets, four actual runtime suites, both dry runs and all 128 desktop/mobile browser fixture scenarios pass: fourteen new return cases and previous 114 regressions. Wallet/watch/exact-rules scope, thirty-day/twenty-marker limits, storage denial/corruption, older-view rejection, explicit Forget, UTC midnight/day selection, focus, recovery and spectator/draft isolation are verified. Automatic reads never move the bookmark or count pilot returns; explicit own review uses the unchanged opt-in report rules. Fixtures are not real-holder acceptance; exact CI/staging/screenshots are in planning `reviews/2026-10-08/watch-return-story/`.
+
+[Review/restart/rollback](docs/WATCH_RETURN_REVIEW.md). No server/recorder load, frozen rule/DNA/ownership/lock change, migration/reset/restore, billing or production change. Original staging records and interrupted coverage stay intact. Real holder desktop/mobile signing/publish/edit/withdraw/live controls, check-in clarity/actual sharing, elapsed reliability/complete Tide, remote Free capacity and maintenance/consent remain open. Regenerate the exact-commit acceptance worksheet. Zero real participants/invitations/posts; Safe Harbour brief unenabled, WWAX deferred, Vector Desk separate.
+
 ## Holder controls and launch acceptance candidate
 
 `codex/holder-acceptance-ready`, stacked on saved-day head `992024c`: named Stop review with the latest saved valuation, positions/queued orders, initial Keep watching focus, Escape/cancel and keyboard containment. Wallet/navigation/run changes discard the intent. A lost Stop response reconciles saved status. Acknowledged Start, including recovery from the owner read, clears the request ID and consent: unchanged follow-ups now create a new dated watch, with fresh publication consent, instead of returning an old stopped record. Frozen watches explain the next crew/style and private archive.
