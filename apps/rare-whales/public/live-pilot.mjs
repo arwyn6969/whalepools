@@ -56,3 +56,11 @@ export function livePilotReadout(reports,now=Date.now()){
  const durations=rows.filter(r=>r.unaided).map(r=>r.creationMs).sort((a,b)=>a-b),n=durations.length;
  return {version:LIVE_PILOT_VERSION,participants:rows.length,targetParticipants:10,missingParticipants:10-rows.length,unaidedStarts:rows.filter(r=>r.unaided).length,medianCreationMs:n?(durations[Math.floor((n-1)/2)]+durations[Math.floor(n/2)])/2:null,meaningfulReturns:rows.filter(r=>r.meaningfulReturn).length,returnWindowsComplete:rows.filter(r=>r.returnWindowComplete).length,rows};
 }
+
+export function livePilotProgress(report,now=Date.now()){
+ const clean=validateLivePilot(report),row=livePilotReadout([clean],now).rows[0];
+ if(clean.events.some(e=>e.type==='live_ready_existing'))return {start:'Existing watch detected; first-start measure unavailable.',returned:'No first-start return window for this report.',next:'Keep company controls available. Tell the organiser this was an existing-watch session.'};
+ if(!row.activated)return {start:clean.events.some(e=>e.type==='live_ready_new')?'Inventory ready. First Start is not confirmed yet.':'Waiting for verified inventory and a first Start.',returned:'Seven-day return window begins after a confirmed first Start.',next:'Choose your owned whales and a ready-made style, then confirm Start. Mark any help honestly.'};
+ const start=clean.events.find(e=>e.type==='live_started').at,end=new Date(start+7*day).toISOString().slice(0,16).replace('T',' ')+' UTC';
+ return {start:'First Start recorded · '+Math.round(row.creationMs/1000)+' seconds after inventory · '+(row.unaided?'no help marked.':'help marked.'),returned:row.meaningfulReturn?'A meaningful later-day return is recorded.':row.returnWindowComplete?'The seven-day window finished without a qualifying return.':'No qualifying later-day return recorded yet.',next:(row.returnWindowComplete?'Window finished at ':'Window ends ')+end+'. '+(row.returnWindowComplete?'Export your report voluntarily for the organiser.':'On a later UTC day, review newer data on your own watch or confirm a follow-up watch. Sharing and Tide picks alone do not count.')};
+}

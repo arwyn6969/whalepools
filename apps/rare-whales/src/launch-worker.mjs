@@ -22,7 +22,7 @@ export async function launchTick(env){
 }
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
- if(url.pathname.startsWith(base+'/watch/'))return watchPreview(request,env,{paper,base});
+ if(url.pathname.startsWith(base+'/watch/'))return watchPreview(request,env,{paper,base,recaps});
  if(url.pathname.startsWith(base+'/api/')){
   const path=url.pathname.slice(base.length),origin=env.APP_ORIGIN||'https://arwyn.party';
   url.pathname=path;
