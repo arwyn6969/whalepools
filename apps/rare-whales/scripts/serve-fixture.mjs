@@ -9,6 +9,7 @@ import {createApi} from '../src/api.mjs';
 import {createArcadeBoard} from '../src/arcade-board.mjs';
 import {createPaperService,tickPaper} from '../src/paper-service.mjs';
 import {createFleetSocialService} from '../src/fleet-social-service.mjs';
+import {createRecorderCoverage} from '../src/recorder-coverage.mjs';
 import {createWatchRecaps} from '../src/watch-recap.mjs';
 import {watchPreview} from '../src/watch-preview.mjs';
 import {tickTide} from '../src/daily-tide.mjs';
@@ -59,7 +60,8 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
   const tideRules=JSON.parse(await readFile(path.join(app,'build/public/tide-rules.json'),'utf8'));
   const social=createFleetSocialService({season,client,tideHash:tideRules.ruleHash,paperHash:paperRules.ruleHash,now:()=>state.paperNow});
   const recaps=createWatchRecaps({rulesHash:paperRules.ruleHash,now:()=>state.paperNow});
-  const api = createApi({season, client, board, paper,social,recaps});
+  const recorder=createRecorderCoverage({rulesHash:paperRules.ruleHash,now:()=>state.paperNow});
+  const api = createApi({season, client, board, paper,social,recaps,recorder});
   async function paperTick({advance=0,error=false}={}){
     state.paperNow+=advance*PAPER_RULES.interval;
     const result=await tickPaper({DB:db,PAPER_ENABLED:'1'},{rulesHash:paperRules.ruleHash,now:state.paperNow,market:async()=>{

@@ -1,6 +1,7 @@
 import {requestJSON} from './request.mjs';
 import {paperURL,paperCard,paperPNG,watchPath} from './paper-share.mjs';
 import {downloadLocal} from './fleet-social.mjs';
+import {installRecorderCoverage} from './recorder-coverage.mjs';
 import {installWatchRecaps} from './watch-recap.mjs';
 import {loadPaperDraft,savePaperDraft,reconcilePaperDraft} from './paper-draft.mjs';
 const $=s=>document.querySelector(s);
@@ -16,6 +17,7 @@ function curve(history){
 }
 export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,refreshInventory}){
  let shownRuns=new Map();
+ const coverage=installRecorderCoverage({root:$('#paper-coverage'),api});
  const recaps=installWatchRecaps({root:$('#paper-fleet'),api,address:()=>context().address,onRead:r=>{const run=shownRuns.get(r.id);return run?.owner===context().address&&r.lastValuation?social.review({...run,history:[{t:r.lastValuation}]}):false;}});
  const arcadeRibbon=$('.demo-ribbon').innerHTML,arcadeFooter=$('footer>span').textContent;
  let active=false,viewId=null,epoch=0,timer,data=null,loading=false,acting=false,wallet=null,whaleKey='',mutation=null,research=null;
@@ -120,5 +122,5 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
   finally{acting=false;clearTimeout(timer);await load();controls();}
  });
  if(!location.hash&&!watchPath(location.pathname))api('/api/paper').then(result=>{if(result.enabled&&!location.hash&&!watchPath(location.pathname))location.hash='paper';}).catch(()=>{});
- return {sync(){const changed=context().address!==wallet;if(changed){recaps.invalidate(true);epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();},route(show,id){recaps.invalidate();active=show;viewId=id;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
+ return {sync(){const changed=context().address!==wallet;if(changed){recaps.invalidate(true);coverage.invalidate();epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();},route(show,id){recaps.invalidate();coverage.invalidate();active=show;viewId=id;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
 }
