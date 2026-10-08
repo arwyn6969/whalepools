@@ -1,0 +1,25 @@
+# Company return story · 8 October 2026
+
+Candidate `codex/watch-return-story`, stacked on holder controls head `ef1ee05`. A holder can deliberately remember their displayed snapshot, then see what changed when they return to the same dated watch in this browser. The comparison reports marked balance change, new timely observations, cumulative closed trades and skipped/gap bars. It never estimates unseen fills from the rolling chart, calls marked balance realized profit or treats current feed health as complete coverage. A compact preset panel explains the saved holding/queued/waiting decisions; it stays expanded during fleet refreshes.
+
+Running holders see their company rather than the locked setup form and preset menu. Stop/follow-up restores the editable setup. The latest-recap shortcut explicitly reads the newest server UTC window, including after an earlier day was selected, and exposes existing day sharing/card controls. Failure preserves the last recap and bookmark with retry feedback. Reconnected provider readiness redraws the private check-in immediately.
+
+The bookmark is optional local presentation state, separate from historical/live drafts and pilot reports. Keys are scoped by wallet/exact paper hash; each dated watch has its own marker. At most twenty records survive, each for thirty days from the explicit save. Stored fields are valuation, equity, cumulative counters, status and save time; no company names, crew, signatures, sessions, publication consent or mutation IDs. This is a local comparison, not server execution or an exported report. Reads, auto-refresh, sharing and public visitor inspection never advance it. Invalid/oversized/corrupt/future-dated storage and denied storage are recoverable; older/regressed views cannot overwrite a newer bookmark. Forget affects only the selected marker and leaves server records/drafts intact.
+
+A successful explicit Remember on a verified own watch may use the unchanged opt-in `live_reviewed` rule. Same/newer observation guards, first Start, later UTC day and seven-day limits remain in the existing pilot version. No automatic return event or new exported fields. Fixture reports are synthetic; zero real pilot participants, invitations or posts.
+
+## Verification and remaining acceptance
+
+202 unit tests, frozen 23-asset build, four actual workerd/D1/SQLite DO suites, both deployment dry runs and 128 desktop/mobile fixture scenarios cover this candidate: fourteen new return-story checks plus all previous 114 regressions. New cases include explicit/automatic behavior, restoration, wallets/spectators/drafts, outage, storage denial, focus, mobile fit, UTC midnight, earlier-day cache and recap recovery. Fixture signing, ownership, accelerated clocks and candles do not establish real eligible-holder acceptance or enjoyment. Exact final head, draft PR, CI, staging bytes, screenshots and command receipts are saved in planning `reviews/2026-10-08/watch-return-story/`.
+
+No server/recorder work is added. Existing frozen historical/paper/Tide/DNA, ownership, engine, dependency/contract locks and recorder configuration remain intact. No D1/DO migration, reset/restore, billing or production change. WWAX deferred; Vector Desk and concurrent REAL WHALES planning remain separate.
+
+Still required: real desktop/mobile signing/inventory, historical publish/edit/withdraw, paper Start/Stop/follow-up/archive/Tide, bookmark clarity/storage/device acceptance and actual share destination; maintenance/consent, Free account quota/deployed cohort evidence, elapsed seven-to-fourteen-day rehearsal and an actual complete Tide. Production remains a separate step. The exact-commit manual acceptance template from PR #11 must be regenerated for this candidate; an old worksheet cannot qualify it.
+
+## Preview and rollback
+
+Build with `npm run build:demo`. Local real-market preview: `RW_PAPER=1 RW_TIDE=1 RW_PAPER_DB=watch-return-preview.sqlite RW_BASE_PATH=/whalepools RW_PORT=48391 node --experimental-sqlite scripts/serve.mjs`. Disposable preview: `RW_PAPER_FIXTURE=1 RW_FIXTURE_PORT=48392 node --experimental-sqlite scripts/serve-fixture.mjs`. Local Node scheduling is not DO proof.
+
+Only code is uploaded to existing `whale-pools-paper-staging`, D1 `7e7532e6-891f-4b29-bd80-752a1e311642` and SQLite namespace `recorder-sqlite-v1`. Verify original watch IDs/start dates, existing Tide windows and all exact assets. Roll back code to holder-controls head `ef1ee05` / staging version `d2692238-6c21-4861-8c29-93225d8b7d05` if needed, preserving all D1/DO records. Bookmarks are optional local state and can remain while an older UI is served.
+
+Used project-local Wrangler 4.136.1 help and [deployment commands](https://developers.cloudflare.com/workers/wrangler/commands/workers/). Next: real-holder check-in and sharing feedback, then the prepared ten-holder/five-interview/seven-day pilot. Safe Harbour remains an unenabled separately versioned prospective brief; decide its appeal from holder feedback before implementation.

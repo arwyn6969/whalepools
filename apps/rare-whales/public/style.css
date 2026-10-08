@@ -77,3 +77,12 @@
 /* A saved UTC day, separate from the rolling chart window. */
 .watch-recap{border:2px solid var(--ink);background:var(--cream);padding:18px;margin:20px 0}.watch-recap .form-actions{margin:0}.watch-recap select{max-width:100%;margin:8px;padding:8px}.watch-recap .board-metrics strong{font-size:24px}.watch-recap li{margin:8px 0}.watch-fallback{margin:24px;padding:24px;overflow-wrap:anywhere}
 @media(max-width:700px){.watch-recap{padding:14px}.watch-recap .pixel-button{white-space:normal;width:100%}.watch-recap .board-metrics strong{font-size:21px}}
+
+/* An explicit local bookmark makes the next company visit readable. */
+.watch-return{border:3px solid var(--ink);background:#e2f1ff;padding:22px;margin:16px 0 26px;box-shadow:5px 5px var(--ink)}
+.watch-return h3{font:11px/1.8 Pixel,monospace;margin:10px 0 16px}.watch-return .eyebrow{font-size:6px;margin:0}
+.watch-return .board-metrics strong{font-size:25px}.watch-return .form-actions{flex-wrap:wrap;margin-top:18px}
+.watch-return summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center;gap:10px}.watch-return summary:before{content:'▸'}
+.watch-return details[open] summary:before{content:'▾'}.watch-return-crew{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:12px 0}
+.watch-return-crew>div{background:var(--cream);border:2px solid var(--ink);padding:14px}.watch-return-crew h4{font-size:16px;margin:0}.watch-return-crew p{font-size:13px;line-height:1.6}
+@media(max-width:700px){.watch-return{padding:16px}.watch-return .board-metrics strong{font-size:22px}.watch-return-crew{grid-template-columns:1fr}.watch-return .form-actions{display:grid;gap:14px}.watch-return .pixel-button{white-space:normal;width:100%}}

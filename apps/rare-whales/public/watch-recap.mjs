@@ -32,6 +32,7 @@ export function installWatchRecaps({root,api,address,onRead=()=>false,onShare=()
    saved.set(id,r);requested.set(id,r.day);host().querySelector('[data-recap-content]').innerHTML=html(r);
    const reviewed=explicitReview&&onRead(r);host().querySelector('[data-recap-status]').textContent='Saved day loaded. Update to read newer observations.'+(reviewed?' New observation reviewed in your local live report.':'');
    host().querySelector('[data-recap]').textContent='UPDATE DAILY RECAP ↻';
+   return true;
   }catch(e){if(token===generation&&wallet===address()&&host())host().querySelector('[data-recap-status]').textContent='Could not load the recap. '+e.message+' Your watch and last displayed recap are kept. Try Update daily recap.';}
   finally{if(token===generation){pending.delete(id);if(host())for(const control of host().querySelectorAll('button,select'))control.disabled=false;}}
  }
@@ -63,5 +64,5 @@ export function installWatchRecaps({root,api,address,onRead=()=>false,onShare=()
   finally{if(button.isConnected)button.disabled=false;}
  });
  root.addEventListener('change',e=>{if(e.target.matches('[data-recap-day]'))load(e.target.dataset.recapDay,e.target.value);});
- return {panel,open(id,day){if(state(id)?.day!==day)return load(id,day,false);},invalidate(clear=false){generation++;pending.clear();requested.clear();if(clear)saved.clear();}};
+ return {panel,latest(id){return load(id,null,true);},open(id,day){if(state(id)?.day!==day)return load(id,day,false);},invalidate(clear=false){generation++;pending.clear();requested.clear();if(clear)saved.clear();}};
 }
