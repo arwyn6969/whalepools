@@ -1,4 +1,6 @@
 import {createLivePilot,livePilotProgress} from './live-pilot.mjs';
+import {tideStory,tideURL,tideShareData,tideCard,tidePNG} from './tide-share.mjs';
+import {sharePaperLink} from './paper-share.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const stamp=t=>t?new Date(t).toISOString().slice(0,16).replace('T',' ')+' UTC':'not observed yet';
@@ -12,7 +14,7 @@ export function installFleetSocial({api,context,signIn,refreshInventory}){
  const pilot=createLivePilot(storage),originalRibbon=$('.demo-ribbon').innerHTML;
  let page=null,viewId=null,wallet=null,epoch=0,own=null,known=false,ownLoading=false,attempt=null,confirmedRun=null;
  let archiveRows=[],archiveNext=null,archiveLoaded=false,archiveLoading=false,archiveOwnKey='';
- let tideData=null,tideLoading=false,tideTimer,acting=false,mutation=null;
+ let tideData=null,tideLoading=false,tideTimer,acting=false,mutation=null,shownRound=null;
  function renderPilot(){
   const {state,unavailable}=pilot.status();
   $('#live-pilot-start').hidden=!!state;$('#live-pilot-controls').hidden=!state;$('#live-pilot-code').disabled=!!state;
@@ -100,16 +102,43 @@ export function installFleetSocial({api,context,signIn,refreshInventory}){
  function renderTide(){
   const rows=tideData.rounds,now=tideData.serverTime;
   const round=viewId?rows.find(r=>r.id===viewId):rows.find(r=>r.status==='running')||rows.find(r=>r.status==='queued'&&r.startsAt>now)||rows[0];
+  const story=round?tideStory(round):null;
   $('#tide-status').textContent=!tideData.enabled?'Daily Tide is not enabled here yet.':!round?'The recorder is preparing the next UTC round. Retry Refresh round shortly.':'Saved round · '+round.id;
   $('#tide-select').innerHTML=rows.map(r=>'<option value="'+r.id+'" '+(r.id===round?.id?'selected':'')+'>'+stamp(r.startsAt)+' · '+r.status+'</option>').join('');
   $('#tide-select').disabled=!rows.length;$('#tide-form').hidden=!round;$('#tide-rules-hash').textContent=(round?.rules.id||tideData.rules.id)+' · '+(round?.rulesHash||tideData.rulesHash||'');
   if(!round){$('#tide-round').innerHTML='';return;}
+  shownRound=round;
+  const next=rows.filter(r=>r.status==='queued'&&r.rulesHash===tideData.rulesHash&&r.startsAt>now&&r.id!==round.id).sort((a,b)=>a.startsAt-b.startsAt)[0];
+  const previous=rows.filter(r=>r.status==='completed'&&r.id!==round.id).sort((a,b)=>b.startsAt-a.startsAt)[0];
+  const pick=round.mine?round.strategies.find(s=>s.preset===round.mine.preset):null;
+  const summary='<section class="tide-outcome" aria-label="Daily Tide story"><p class="eyebrow">DAILY TIDE · '+round.id.slice(-10)+'</p><h3 tabindex="-1">'+story.title+'</h3><p>'+esc(story.description)+'</p>'+(pick?'<p><strong>YOUR LOCKED PICK · '+esc(pick.name)+'</strong></p><p>'+ (story.final?'Your pick follows its saved rank '+pick.rank+'.':story.frozen?'Its last saved balance stays below; this round accepts no new picks.':'Your choice follows this shared preset; it cannot be changed.')+'</p>':'')+'<p>'+esc(story.activity)+'</p><p class="muted">Marked balances include modeled costs and open positions; they are not realized profit. '+(story.frozen?'The last valuation is frozen without inventing a closing trade.':'Waiting is a strategy decision; this round is still prospective.')+'</p><div class="form-actions">'+(next?'<a class="pixel-button yellow small" href="#tide/'+next.id+'">CHOOSE THE NEXT TIDE →</a>':'')+(previous?'<a class="link-button" href="#tide/'+previous.id+'">'+(round.status==='completed'&&previous.startsAt<round.startsAt?'READ PREVIOUS FINISHED TIDE':'READ LAST FINISHED TIDE')+' →</a>':'')+'<a class="link-button" href="#paper">RETURN TO MY COMPANY →</a></div></section>';
+  const share='<section class="tide-share paper-share" aria-label="Share this dated Tide"><label>Dated round link<input readonly aria-label="Dated Tide link" value="'+esc(tideURL(location.href,round.id))+'"></label><div class="form-actions"><button class="pixel-button blue small" data-tide-share>SHARE THIS TIDE ↗</button><button class="pixel-button white small" data-tide-copy>COPY ROUND LINK</button><button class="pixel-button yellow small" data-tide-png>ROUND PNG ↓</button><button class="pixel-button white small" data-tide-svg>ROUND SVG ↓</button></div><p class="muted">Cards freeze these displayed values and coverage. Links open this dated round, which can update while it unfolds. You choose where to share; no post is sent automatically.</p><p data-tide-share-status role="status"></p></section>';
   const remaining=Math.max(0,(round.status==='queued'?round.startsAt:round.endsAt)-now);
   const phase=round.status==='queued'?'PICKS OPEN':round.status==='running'?'ROUND RUNNING':round.status==='completed'?(round.quality==='complete'?'FINAL RESULTS':'PARTIAL RESULTS · NO FINAL RANKS'):'OLDER RULES · PAUSED';
-  const strategies=round.strategies.map(s=>'<article class="panel tide-strategy"><div class="panel-title purple">'+esc(s.name)+'<span>'+(s.rank?'RANK '+s.rank:'—')+'</span></div><div class="share-card-body"><strong class="tide-balance">'+money(s.stats.equity)+'</strong><p>'+pct(s.stats.returnPct)+' net · '+s.stats.maxDrawdown.toFixed(3)+'% drawdown<br>'+s.stats.trades+' closed trades · '+s.stats.exposure.toFixed(2)+'% average exposure</p><p>'+s.observedBars+'/288 timely observations · '+s.gapBars+' skipped/gap bars<br>Last observation '+stamp(s.lastObservation)+'</p><strong>'+ (round.status==='completed'||round.status==='paused'?'FROZEN AT LAST VALUATION':s.position?'POSITION OPEN':s.pending?'ORDER QUEUED':'WATCHING')+'</strong><p>'+esc(s.action)+'</p><p class="muted">Cash reference $1,000 · 25% hold '+money(s.stats.hold)+'. Same neutral stats and costs for every pick.</p></div></article>').join('');
-  $('#tide-round').innerHTML='<article class="panel"><div class="panel-title yellow">'+phase+'<span>24 HOURS · $1,000 PAPER</span></div><div class="share-card-body"><h2>'+stamp(round.startsAt)+' → '+stamp(round.endsAt)+'</h2><p>'+(round.status==='queued'?'Confirm one preset before this common start. Your pick locks when saved.':round.status==='running'?'The outcome is still unfolding. Follow the next observed close; these are not final ranks.':'A dated round record; no new picks or retrospective fills.')+'</p>'+(['queued','running'].includes(round.status)?'<p>About '+Math.ceil(remaining/3600000)+' hours until '+(round.status==='queued'?'start':'finish')+'. Times are UTC; the server clock decides the deadline.</p>':'')+(round.status==='running'&&round.strategies.some(s=>s.gapBars>0)?'<p class="notice">This round already has interrupted closes. It will keep partial results without final ranks; new observations still arrive.</p>':'')+'<p>'+round.picks.length+'/20 wallet picks · <a class="link-button" href="#tide/'+round.id+'">OPEN DATED ROUND →</a></p></div></article><div class="paper-grid">'+strategies+'</div><article class="panel"><div class="panel-title purple">THE ROUND PICKS</div><div class="share-card-body">'+(round.picks.map(p=>'<p><strong>'+esc(p.nickname)+'</strong> · '+esc(p.preset)+' · '+(p.badge.collection==='rarewhales'?'Rare Whales':'WhaleStreet')+' #'+p.badge.tokenId+(p.owner===context().address?' · YOUR PICK':'')+'</p>').join('')||'<p>Be the first holder to choose a preset for this round.</p>')+'</div></article>';
-  $('#tide-round').dataset.roundId=round.id;tideForm(round);
+  const strategies=round.strategies.map(s=>'<article class="panel tide-strategy"><div class="panel-title purple">'+esc(s.name)+'<span>'+(story.final?'RANK '+s.rank:'—')+'</span></div><div class="share-card-body"><strong class="tide-balance">'+money(s.stats.equity)+'</strong><p>'+pct(s.stats.returnPct)+' net · '+s.stats.maxDrawdown.toFixed(3)+'% drawdown<br>'+s.stats.trades+' closed trades · '+s.stats.exposure.toFixed(2)+'% average exposure</p><p>'+s.observedBars+'/288 timely observations · '+s.gapBars+' skipped/gap bars<br>Last observation '+stamp(s.lastObservation)+'</p><strong>'+ (round.status==='completed'||round.status==='paused'?'FROZEN AT LAST VALUATION':s.position?'POSITION OPEN':s.pending?'ORDER QUEUED':'WATCHING')+'</strong><p>'+esc(s.action)+'</p><p class="muted">Cash reference $1,000 · 25% hold '+money(s.stats.hold)+'. Same neutral stats and costs for every pick.</p></div></article>').join('');
+  $('#tide-round').innerHTML='<article class="panel"><div class="panel-title yellow">'+phase+'<span>24 HOURS · $1,000 PAPER</span></div><div class="share-card-body"><h2>'+stamp(round.startsAt)+' → '+stamp(round.endsAt)+'</h2><p>'+(round.status==='queued'?'Confirm one preset before this common start. Your pick locks when saved.':round.status==='running'?'The outcome is still unfolding. Follow the next observed close; these are not final ranks.':'A dated round record; no new picks or retrospective fills.')+'</p>'+(['queued','running'].includes(round.status)?'<p>About '+Math.ceil(remaining/3600000)+' hours until '+(round.status==='queued'?'start':'finish')+'. Times are UTC; the server clock decides the deadline.</p>':'')+(round.status==='running'&&round.strategies.some(s=>s.gapBars>0)?'<p class="notice">This round already has interrupted closes. It will keep partial results without final ranks; new observations still arrive.</p>':'')+'<p>'+round.picks.length+'/20 wallet picks · <a class="link-button" href="#tide/'+round.id+'">OPEN DATED ROUND →</a></p></div></article><div class="paper-grid">'+strategies+'</div><article class="panel"><div class="panel-title purple">THE ROUND PICKS</div><div class="share-card-body">'+(round.picks.map(p=>'<p><strong>'+esc(p.nickname)+'</strong> · '+esc(p.preset)+' · '+(p.badge.collection==='rarewhales'?'Rare Whales':'WhaleStreet')+' #'+p.badge.tokenId+(p.owner===context().address?' · YOUR PICK':'')+'</p>').join('')||(round.status==='queued'?'<p>Be the first holder to choose a preset for this round.</p>':'<p>No holder picks were saved. The three shared presets still ran.</p>'))+'</div></article>';
+  $('#tide-round').querySelector('.share-card-body').insertAdjacentHTML('beforeend',summary+share);
+  $('#tide-round').dataset.roundId=round.id;tideForm(round);$('#tide-form').hidden=round.status!=='queued'||!!round.mine;
  }
+ $('#tide-round').addEventListener('click',async e=>{
+  const button=e.target.closest('[data-tide-share],[data-tide-copy],[data-tide-png],[data-tide-svg]');if(!button||!shownRound)return;
+  const round=shownRound,token=epoch,address=context().address,host=button.closest('.tide-share'),status=host.querySelector('[data-tide-share-status]');
+  const current=()=>page==='tide'&&token===epoch&&address===context().address&&host.isConnected&&shownRound?.id===round.id;
+  button.disabled=true;
+  try{
+   if(button.hasAttribute('data-tide-share')){
+    const result=await sharePaperLink(tideShareData(round,location.href),{current});if(!current()||result==='stale')return;
+    status.textContent=result==='sheet'?'Share sheet completed. Check your chosen destination; this is not proof a post was delivered.':result==='cancelled'?'Sharing cancelled. Your pick and company are kept.':result==='copied'?'Round link copied. Choose where to share it.':'Sharing is unavailable here. Select and copy the dated round link above.';
+    if(['sheet','copied'].includes(result))event('live_shared');
+   }else if(button.hasAttribute('data-tide-copy')){
+    await navigator.clipboard.writeText(tideURL(location.href,round.id));if(!current())return;status.textContent='Round link copied. Choose where to share it.';event('live_shared');
+   }else{
+    const png=button.hasAttribute('data-tide-png'),value=png?await tidePNG(round,location.href):tideCard(round,location.href);if(!current())return;
+    downloadLocal(value,png?'image/png':'image/svg+xml','whale-pools-'+round.id+(png?'.png':'.svg'));status.textContent='Saved round snapshot downloaded. The link can update while the round unfolds.';event('live_shared');
+   }
+  }catch{if(current())status.textContent='Could not share this round. Your pick and company are kept; copy the dated link above or retry.';}
+  finally{if(button.isConnected)button.disabled=false;}
+ });
  async function loadTide(){
   if(page!=='tide'||tideLoading)return;
   const n=epoch,address=context().address;tideLoading=true;$('#tide-refresh').disabled=true;
@@ -142,7 +171,7 @@ export function installFleetSocial({api,context,signIn,refreshInventory}){
   const next=context().address;
   if(next!==wallet){
    if(wallet&&pilot.status().state?.active){pilot.stop();renderPilot();}
-   wallet=next;epoch++;known=false;own=null;attempt=null;confirmedRun=null;mutation=null;archiveLoaded=false;archiveRows=[];archiveNext=null;
+   wallet=next;epoch++;known=false;own=null;attempt=null;confirmedRun=null;mutation=null;archiveLoaded=false;archiveRows=[];archiveNext=null;shownRound=null;
    $('#tide-name').value='My Tide Pick';$('#tide-consent').checked=false;$('#tide-message').textContent='';$('#paper-archive-list').replaceChildren();$('#paper-archive-status').textContent='';
    if(page==='tide'){tideData=null;$('#tide-round').replaceChildren();$('#tide-badge').replaceChildren();$('#tide-form').hidden=true;$('#tide-status').textContent='Wallet changed. Refreshing the round…';$('#tide-fields').disabled=true;clearTimeout(tideTimer);loadTide();}
   }
@@ -156,7 +185,7 @@ export function installFleetSocial({api,context,signIn,refreshInventory}){
   shared:()=>event('live_shared'),inventoryError:()=>event('live_inventory_error'),startError:()=>event('live_start_error'),
   startAttempt(){attempt={address:context().address,previousId:own?.id??null};},started,
   route(next,id){
-   page=next;viewId=id;epoch++;clearTimeout(tideTimer);
+   page=next;viewId=id;epoch++;shownRound=null;clearTimeout(tideTimer);
    const live=['paper','tide','live-pilot'].includes(next);
    $('#footer-pilot').href=live?'#live-pilot':'#pilot';
    if(next==='tide'||next==='live-pilot'){

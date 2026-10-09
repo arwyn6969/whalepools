@@ -12,6 +12,7 @@ import {createFleetSocialService} from '../src/fleet-social-service.mjs';
 import {createRecorderCoverage} from '../src/recorder-coverage.mjs';
 import {createWatchRecaps} from '../src/watch-recap.mjs';
 import {watchPreview} from '../src/watch-preview.mjs';
+import {tidePreview} from '../src/tide-preview.mjs';
 import {tickTide} from '../src/daily-tide.mjs';
 import {PAPER_RULES} from '../src/paper-engine.mjs';
 import {COLLECTIONS, CHAIN_ID} from '../src/config.mjs';
@@ -133,7 +134,7 @@ export async function startFixtureServer({port = Number(process.env.RW_FIXTURE_P
         }
         return send(response.status, responseBody, Object.fromEntries(response.headers));
       }
-      if(pathname.startsWith('/watch/')){const response=await watchPreview(new Request(origin+req.url,{method:req.method}),{DB:db,PAPER_ENABLED:paperEnabled?'1':'0',APP_ORIGIN:origin,ASSETS:{fetch:async()=>new Response((await readFile(path.join(app,'build/public/index.html'),'utf8')).replace('<body>','<body>'+toolbar+'<script src="/__fixture/provider.js"></script>'))}},{paper,recaps,base:''});return send(response.status,Buffer.from(await response.arrayBuffer()),Object.fromEntries(response.headers));}
+      if(pathname.startsWith('/watch/')||pathname.startsWith('/tide/')){const response=await (pathname.startsWith('/tide/')?tidePreview:watchPreview)(new Request(origin+req.url,{method:req.method}),{DB:db,PAPER_ENABLED:paperEnabled?'1':'0',TIDE_ENABLED:paperEnabled?'1':'0',APP_ORIGIN:origin,ASSETS:{fetch:async()=>new Response((await readFile(path.join(app,'build/public/index.html'),'utf8')).replace('<body>','<body>'+toolbar+'<script src="/__fixture/provider.js"></script>'))}},{paper,recaps,social,base:''});return send(response.status,Buffer.from(await response.arrayBuffer()),Object.fromEntries(response.headers));}
       const name = pathname === '/' ? 'index.html' : pathname.slice(1);
       if (!/^[a-zA-Z0-9/_.-]+$/.test(name) || name.includes('..')) return send(404, 'Not found');
       let contents = await readFile(path.join(app, 'build/public', name));

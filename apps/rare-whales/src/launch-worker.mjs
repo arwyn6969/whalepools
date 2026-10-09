@@ -12,6 +12,7 @@ import {createWatchRecaps} from './watch-recap.mjs';
 import {createRecorderCoverage} from './recorder-coverage.mjs';
 import {scheduleRecorder} from './recorder-coordinator.mjs';
 import {watchPreview} from './watch-preview.mjs';
+import {tidePreview} from './tide-preview.mjs';
 const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash});
 const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),recorder=createRecorderCoverage({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps,recorder});
 export async function launchTick(env){
@@ -23,6 +24,7 @@ export async function launchTick(env){
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
  if(url.pathname.startsWith(base+'/watch/'))return watchPreview(request,env,{paper,base,recaps});
+ if(url.pathname.startsWith(base+'/tide/'))return tidePreview(request,env,{social,base});
  if(url.pathname.startsWith(base+'/api/')){
   const path=url.pathname.slice(base.length),origin=env.APP_ORIGIN||'https://arwyn.party';
   url.pathname=path;

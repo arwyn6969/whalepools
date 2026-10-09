@@ -12,6 +12,7 @@ import {installNextSprint} from './next-sprint.mjs';
 import {installFleetSocial} from './fleet-social.mjs';
 import {installPaper} from './paper.mjs';
 import {watchPath} from './paper-share.mjs';
+import {tidePath} from './tide-share.mjs';
 import {signInLanding} from './auth-journey.mjs';
 const walletDiscovery=discoverWallets(window);
 const pickWallet=createWalletPicker(window,document,{wallets:walletDiscovery});
@@ -98,7 +99,7 @@ function leaveSpectator(){
 }
 function message(text){$('#global-message').textContent=text;$('#global-message').hidden=!text;}
 function route(){
- const hash=location.hash.slice(1)||((watchPath(location.pathname)?'paper/'+watchPath(location.pathname):'')),current=hash==='paper'||hash.startsWith('paper/')?'paper':hash==='tide'||hash.startsWith('tide/')?'tide':hash.startsWith('company/')?'company':['seat','crew','challenge','pilot','live-pilot'].includes(hash)?hash:'practice';
+ const hash=location.hash.slice(1)||(watchPath(location.pathname)?'paper/'+watchPath(location.pathname):tidePath(location.pathname)?'tide/'+tidePath(location.pathname):''),current=hash==='paper'||hash.startsWith('paper/')?'paper':hash==='tide'||hash.startsWith('tide/')?'tide':hash.startsWith('company/')?'company':['seat','crew','challenge','pilot','live-pilot'].includes(hash)?hash:'practice';
  paper.route(current==='paper',hash.startsWith('paper/')?hash.slice(6):null);
  live.route(current,hash.startsWith('paper/')?hash.slice(6):hash.startsWith('tide/')?hash.slice(5):null);
  nextSprint.cancelCompany();if(current==='company')nextSprint.openCompany(hash.slice('company/'.length));

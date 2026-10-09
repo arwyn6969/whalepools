@@ -1,5 +1,6 @@
 import {requestJSON} from './request.mjs';
 import {paperURL,paperCard,paperPNG,watchPath,validRecapDate} from './paper-share.mjs';
+import {tidePath} from './tide-share.mjs';
 import {downloadLocal} from './fleet-social.mjs';
 import {installRecorderCoverage} from './recorder-coverage.mjs';
 import {installWatchRecaps} from './watch-recap.mjs';
@@ -181,6 +182,6 @@ export function installPaper({api,asset,avatar,hydrateArt,context,social,signIn,
   catch(e){uncertain=!!e.uncertain;if(address===context().address)$('#paper-message').textContent=(uncertain?'The Stop response did not arrive.':e.message)+' Refresh to check the saved status before trying again.';}
   finally{acting=false;clearTimeout(timer);await load();controls();if(uncertain&&address===context().address&&data?.me?.address===address&&data.me.run?.id===id&&data.me.run.status==='stopped')$('#paper-message').textContent='Stop confirmed from your saved record. Its dated balance is frozen; you can start a new crew.';}
  });
- if(!location.hash&&!watchPath(location.pathname))api('/api/paper').then(result=>{if(result.enabled&&!location.hash&&!watchPath(location.pathname))location.hash='paper';}).catch(()=>{});
+ if(!location.hash&&!watchPath(location.pathname)&&!tidePath(location.pathname))api('/api/paper').then(result=>{if(result.enabled&&!location.hash&&!watchPath(location.pathname)&&!tidePath(location.pathname))location.hash='paper';}).catch(()=>{});
  return {sync(){const changed=context().address!==wallet,readyChanged=context().walletReady!==presentedWalletReady;if(changed){closeStopReview();recaps.invalidate(true);coverage.invalidate();epoch++;clearTimeout(timer);if(active){shownRuns.clear();$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Wallet changed. Refreshing the fleet for this session…';}}controls();if(changed&&active)load();else if(readyChanged&&active&&data)render(viewId?shownRuns.get(viewId):null);},route(show,id){closeStopReview();recaps.invalidate();coverage.invalidate();active=show;viewId=id;viewDay=id===watchPath(location.pathname)&&!location.hash?validRecapDate(new URLSearchParams(location.search).get('day')):null;openedDay=false;epoch++;clearTimeout(timer);$('.demo-ribbon').innerHTML=show?'<span>LIVE PAPER BETA</span> Choose a crew · watch new candles · inspect its decisions <a href="#practice">HISTORICAL ARCADE ↗</a>':arcadeRibbon;$('footer>span').textContent=show?'RARE WHALES + WHALESTREET · LIVE PAPER BETA':arcadeFooter;$('#paper-home').hidden=!id;if(show){$('#paper-fleet').replaceChildren();$('#paper-feed').textContent='Refreshing the dated forward record…';load();}}};
 }
