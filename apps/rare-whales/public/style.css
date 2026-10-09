@@ -79,6 +79,8 @@
 @media(max-width:700px){.watch-recap{padding:14px}.watch-recap .pixel-button{white-space:normal;width:100%}.watch-recap .board-metrics strong{font-size:21px}}
 
 /* An explicit local bookmark makes the next company visit readable. */
+.tide-outcome{border:3px solid var(--ink);background:#ebe5ff;padding:20px;margin:20px 0}.tide-outcome h3{font:11px/1.9 Pixel,monospace;line-height:1.9}.tide-outcome .form-actions{flex-wrap:wrap}.tide-outcome .pixel-button{white-space:normal}.tide-share input{padding:12px;border:2px solid var(--ink);background:white;overflow-wrap:anywhere}
+@media(max-width:700px){.tide-outcome{padding:16px}.tide-outcome .form-actions{display:grid;gap:14px}.tide-outcome .pixel-button{width:100%}}
 .watch-return{border:3px solid var(--ink);background:#e2f1ff;padding:22px;margin:16px 0 26px;box-shadow:5px 5px var(--ink)}
 .watch-return h3{font:11px/1.8 Pixel,monospace;margin:10px 0 16px}.watch-return .eyebrow{font-size:6px;margin:0}
 .watch-return .board-metrics strong{font-size:25px}.watch-return .form-actions{flex-wrap:wrap;margin-top:18px}

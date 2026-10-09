@@ -6,12 +6,12 @@ export function paperURL(base,id){
  const url=new URL(base);
  if(!['http:','https:'].includes(url.protocol))throw Error('Use an HTTP paper record link.');
  url.username='';url.password='';url.search='';url.hash='';
- url.pathname=url.pathname.replace(/\/watch\/[^/]*\/?$/,'/').replace(/\/index\.html$/,'/').replace(/\/?$/,'/')+'watch/'+id.toLowerCase();return url.href;
+ url.pathname=url.pathname.replace(/\/(?:watch|tide)\/[^/]*\/?$/,'/').replace(/\/index\.html$/,'/').replace(/\/?$/,'/')+'watch/'+id.toLowerCase();return url.href;
 }
 export function watchPath(path){const id=path.match(/\/watch\/([^/]+)$/)?.[1];return companyId(id)?id.toLowerCase():null;}
 export async function paperPNG(run,url){return svgPNG(paperCard(run,url));}
 export async function recapPNG(recap,nickname,url){return svgPNG(recapCard(recap,nickname,url));}
-async function svgPNG(card){
+export async function svgPNG(card){
  // Draw our small, generated text/rectangle SVG vocabulary directly. No remote
  // images, blob image permission, SVG scripts or browser-specific SVG decoding.
  const svg=new DOMParser().parseFromString(card,'image/svg+xml').documentElement;
