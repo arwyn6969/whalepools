@@ -1,6 +1,16 @@
 # Whale Pools current development status
 
-Updated 9 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
+Updated 16 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
+
+## Integrated release candidate and current gates
+
+`codex/release-readiness` combines the holder/playtest stack through PR #14 with the separate maintenance branch. The STATUS.md add/add conflict retains the latest product record. Wrangler 4.151.1, Miniflare 5.20261012.1-beta, sharp 0.35.5 and Undici 7.29.1 address the current development-tool advisories. Exact viem, esbuild, solc and OpenZeppelin lock entries are preserved. Both current dependency audits report zero vulnerabilities.
+
+219 tests, build/demo, four actual runtime suites, both staging/production dry runs and 22 local-chain contract integration cases pass. The previous 143 fixture browser scenarios remain dated evidence; application source is unchanged in this integration. No production or staging deployment, resource, migration, rule or billing change.
+
+Fresh 16 October reads show fully qualified Tide rounds on 11, 12 and 14 October; 13 and 15 October are partial. The separate neutral-watch diary has four consecutive clean UTC days on 11–14 October, interrupted on 15 October by four late receipts and five valuation-only decisions. Current consecutive full clean days remain zero. A short live log window observed six successful invocations, including a new close; peak measured object CPU was 51 ms. This does not explain earlier interruptions or prove deployed full-cohort capacity.
+
+MetaMask warning review is now filed as https://github.com/MetaMask/eth-phishing-detect/issues/303173 with owner-authorised public URL/source/login details, excluding wallet identifiers and screenshots. The support messenger retry failed to send; issue creation is confirmed, classification clearance is not. Holder signing and recruitment remain gated. Real wallet/device/operator acceptance, seven consecutive clean days, capacity and pilot observations remain open. Planning evidence is in `reviews/2026-10-16/progress-sprint/` in the Rare WHALES workspace.
 
 ## Private holder playtest desk candidate
 
