@@ -1,6 +1,6 @@
 # Closed paper beta: recorder and capacity review
 
-Updated 20 October 2026. Implementation `ba2d82b`, isolated staging version `ae3e879b-3560-4a8b-8da8-9c166e6f47c3`, on the existing draft [PR #15](https://github.com/arwyn6969/whalepools/pull/15). Production remains the historical arcade. Real-holder acceptance and the seven-clean-day rehearsal remain open.
+Updated 20 October 2026. Implementation `ba2d82b`, isolated staging version `a3f8596a-c37a-4be4-8986-8463329b1f8a`, on the existing draft [PR #15](https://github.com/arwyn6969/whalepools/pull/15). Production remains the historical arcade. Real-holder acceptance and the seven-clean-day rehearsal remain open.
 
 ## Recorder recovery
 
@@ -28,7 +28,7 @@ Six read RPC traces were canceled without exceptions after full HTTP 200 body va
 
 ## Validation and rollout
 
-234 unit/HTTP tests, build/demo, five compiled workerd/D1/SQLite DO suites and both packaging dry runs pass. [CI passes](https://github.com/arwyn6969/whalepools/actions/runs/39440082170). Staging serves all 23 exact public asset hashes and rejects unauthorized/cross-origin operations. Original records and 831 overlapping saved points match the pre-release snapshot; the 15 October four late receipts/five valuation-only decisions remain visible. No real wallet was connected or signed by this work.
+234 unit/HTTP tests, build/demo, five compiled workerd/D1/SQLite DO suites and both packaging dry runs pass. [CI passes](https://github.com/arwyn6969/whalepools/actions/runs/39440082170). Staging serves all 23 exact public asset hashes and rejects unauthorized/cross-origin operations. Original records and 831 overlapping saved points match the pre-release snapshot; the 15 October four late receipts/five valuation-only decisions remain visible. A real 14:40 UTC close committed all three references as actionable in one transaction; the bounded live window peaked at 43 ms recorder CPU. A settings comparison caught Wrangler defaulting query-string redaction off; it was restored to the saved baseline and pinned explicitly in staging configuration before handoff. Existing bindings and all observability settings now match the baseline, plus the intended reader binding/mode. No real wallet was connected or signed by this work.
 
 Full cloud reports, sanitized CPU evidence, preservation and fresh readiness are in the planning workspace at `reviews/2026-10-20/closed-beta-recorder/`. Raw logs and generated secrets stay outside Git. Disposable cloud resources are removed after evidence preservation.
 

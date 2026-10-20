@@ -4,7 +4,7 @@ Updated 20 October 2026. Production remains the free Historical Arcade v1 descri
 
 ## Closed beta recorder and capacity update · 20 October
 
-Implementation `ba2d82b` is deployed only to isolated staging as `ae3e879b-3560-4a8b-8da8-9c166e6f47c3`. Atomic recorder commits, bounded history work, prospective reference renewal and sixteen read executors are verified. 234 tests, five compiled runtime suites and CI pass. Cloud fixtures pass at 10/20 holders × 12 whales × 3,800 fractional history points, including concurrent reads/archive; sampled outer paper CPU is 3 ms. All 23 assets and old records match. [Review and limits](docs/CLOSED_BETA_RECORDER_REVIEW.md).
+Implementation `ba2d82b` is deployed only to isolated staging as `a3f8596a-c37a-4be4-8986-8463329b1f8a`. Atomic recorder commits, bounded history work, prospective reference renewal and sixteen read executors are verified. 234 tests, five compiled runtime suites and CI pass. Cloud fixtures pass at 10/20 holders × 12 whales × 3,800 fractional history points, including concurrent reads/archive; sampled outer paper CPU is 3 ms. All 23 assets and old records match. [Review and limits](docs/CLOSED_BETA_RECORDER_REVIEW.md).
 
 MetaMask marked issue #303173 resolved on 19 October; actual wallet retest remains open. Four completed clean days on 16–19 October precede today's 12:35 valuation-only observation, so the seven-day gate remains false. Real desktop/mobile/operator acceptance and observed pilot remain open. Production, billing, rule hashes and existing D1/recorder records are preserved. Earlier dated evidence below remains historical.
 

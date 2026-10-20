@@ -6,7 +6,7 @@
  "workers_dev":true,
  "preview_urls":false,
  "routes":[],
- "observability":{"enabled":true,"traces":{"enabled":true,"head_sampling_rate":0.1}},
+ "observability":{"enabled":true,"redact_query_string":true,"traces":{"enabled":true,"head_sampling_rate":0.1}},
  "triggers":{"crons":["* * * * *"]},
  "durable_objects":{"bindings":[{"name":"PAPER_RECORDER","class_name":"PaperRecorder"},{"name":"PAPER_READS","class_name":"PaperReadExecutor"}]},
  "migrations":[{"tag":"recorder-sqlite-v1","new_sqlite_classes":["PaperRecorder"]},{"tag":"paper-reads-sqlite-v1","new_sqlite_classes":["PaperReadExecutor"]}],
