@@ -3,7 +3,9 @@ import scores from '../build/arcade-scores.json' with {type:'json'};
 import {createApi} from './api.mjs';
 import {createArcadeBoard} from './arcade-board.mjs';
 import {demoFetch,demoHeaders} from './demo-worker.mjs';
-import {createPaperService,tickPaper} from './paper-service.mjs';
+import {createPaperService} from './paper-service.mjs';
+import {createPaperReadService,createPaperArchiveReadService} from './paper-read-service.mjs';
+import {tickPaper} from './paper-recorder.mjs';
 import paperRules from '../build/public/paper-rules.json' with {type:'json'};
 import tideRules from '../build/public/tide-rules.json' with {type:'json'};
 import {createFleetSocialService} from './fleet-social-service.mjs';
@@ -13,8 +15,9 @@ import {createRecorderCoverage} from './recorder-coverage.mjs';
 import {scheduleRecorder} from './recorder-coordinator.mjs';
 import {watchPreview} from './watch-preview.mjs';
 import {tidePreview} from './tide-preview.mjs';
-const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper=createPaperService({season,rulesHash:paperRules.ruleHash});
-const social=createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),recorder=createRecorderCoverage({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps,recorder});
+import {forwardPaperRead} from './paper-read-routing.mjs';
+const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper={...createPaperService({season,rulesHash:paperRules.ruleHash}),...createPaperReadService({rulesHash:paperRules.ruleHash})};
+const social={...createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),...createPaperArchiveReadService()},recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),recorder=createRecorderCoverage({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps,recorder});
 export async function launchTick(env){
  const result=await tickPaper(env,{rulesHash:paperRules.ruleHash});
  if(result.busy)return result;
@@ -23,6 +26,7 @@ export async function launchTick(env){
 }
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
+ const forwarded=await forwardPaperRead(request,env,base);if(forwarded)return forwarded;
  if(url.pathname.startsWith(base+'/watch/'))return watchPreview(request,env,{paper,base,recaps});
  if(url.pathname.startsWith(base+'/tide/'))return tidePreview(request,env,{social,base});
  if(url.pathname.startsWith(base+'/api/')){

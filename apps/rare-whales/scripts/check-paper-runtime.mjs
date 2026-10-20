@@ -10,7 +10,7 @@ const {Miniflare,convertV4MiniflareOptions}=await import(pathToFileURL(wranglerR
 const rules=JSON.parse(await readFile(new URL('../build/public/paper-rules.json',import.meta.url)));
 await mkdir(new URL('../work/',import.meta.url),{recursive:true});
 // The clock-control endpoint exists only in this ignored runtime test wrapper.
-const source=`import worker from '../build/cloudflare-worker.mjs';import {tickPaper} from '../src/paper-service.mjs';export default {...worker,async fetch(request,env){if(new URL(request.url).pathname==='/__test/tick')return Response.json(await tickPaper(env,{rulesHash:${JSON.stringify(rules.ruleHash)},now:Number(request.headers.get('fixture-now'))}));return worker.fetch(request,env);}};`;
+const source=`import worker from '../build/cloudflare-worker.mjs';import {tickPaper} from '../src/paper-recorder.mjs';export default {...worker,async fetch(request,env){if(new URL(request.url).pathname==='/__test/tick')return Response.json(await tickPaper(env,{rulesHash:${JSON.stringify(rules.ruleHash)},now:Number(request.headers.get('fixture-now'))}));return worker.fetch(request,env);}};`;
 await writeFile(new URL('../work/paper-runtime-entry.mjs',import.meta.url),source);
 await build({entryPoints:[fileURLToPath(new URL('../work/paper-runtime-entry.mjs',import.meta.url))],outfile:fileURLToPath(new URL('../work/paper-runtime-worker.mjs',import.meta.url)),bundle:true,format:'esm',platform:'browser',target:'es2022'});
 const base=Date.UTC(2026,9,7,12);let clock=base+R.interval+1000;
@@ -44,9 +44,11 @@ try{
  const longState=JSON.parse((await db.prepare("SELECT state_json FROM wp_paper_runs WHERE id='load-0'").first()).state_json);assert.equal(longState.history.length,3801);assert.equal(longState.history.at(-1).actionable,true);
  console.log(JSON.stringify({event:'paper-long-history-runtime-fixture',holderRuns:20,whalesPerHolder:12,savedClosesPerHolder:3800,tickWallMs:Date.now()-longTickStart,actualWorkerd:true,cloudflarePlanCpuLimitSimulated:false,realMarket:false,realWallet:false}));
  await db.prepare("UPDATE wp_paper_runs SET status='stopped' WHERE id LIKE 'load-%'").run();
- const token='22'.repeat(32),address='0x'+'2'.repeat(40),hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex'),id=data.labs[0].id;
- await db.prepare('INSERT INTO rw_sessions(hash,address,expires) VALUES(?,?,?)').bind(hash,address,Date.now()+60000).run();await db.prepare('UPDATE wp_paper_runs SET wallet=? WHERE id=?').bind(address,id).run();
+ const token='22'.repeat(32),address='0x'+'2'.repeat(40),hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex'),id='22222222-2222-4222-8222-222222222222';
+ await db.prepare('INSERT INTO rw_sessions(hash,address,expires) VALUES(?,?,?)').bind(hash,address,Date.now()+60000).run();
+ // A holder fixture is a separate record; never repurpose a neutral reference.
+ await db.prepare('INSERT INTO wp_paper_runs(id,wallet,nickname,input_json,rules_hash,created_at,ends_at,status,state_json) SELECT ?,?,nickname,input_json,rules_hash,created_at,ends_at,status,state_json FROM wp_paper_runs WHERE id=?').bind(id,address,data.labs[0].id).run();
  const stopped=await mf.dispatchFetch('https://arwyn.party/whalepools/api/paper/stop',{method:'POST',headers:{origin:'https://arwyn.party','content-type':'application/json',cookie:'wp_arcade_session='+token},body:JSON.stringify({id,wallet:address})});assert.equal(stopped.status,200);assert.equal((await stopped.json()).run.status,'stopped');
- clock+=R.interval;await mf.dispatchFetch('https://arwyn.party/__test/tick',{headers:{'fixture-now':String(clock)}});assert.equal((await db.prepare('SELECT status FROM wp_paper_runs WHERE id=?').bind(id).first()).status,'stopped');
+ clock+=R.interval;const afterStop=await (await mf.dispatchFetch('https://arwyn.party/__test/tick',{headers:{'fixture-now':String(clock)}})).json();assert.equal(afterStop.error,undefined);assert.equal((await db.prepare('SELECT status FROM wp_paper_runs WHERE id=?').bind(id).first()).status,'stopped');
  console.log('Actual workerd/D1 paper runtime passed: recorder, atomic ledger, repeated ticks, public API/assets, session-bound stop and origin/anonymous rejection. Market and wallet are fixtures.');
 }finally{await mf.dispose();}

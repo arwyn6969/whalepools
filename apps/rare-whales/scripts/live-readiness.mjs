@@ -1,4 +1,5 @@
 import {readFile,writeFile} from 'node:fs/promises';
+import {diarySummary} from '../src/recorder-evidence.mjs';
 const base=new URL(process.argv[2]||'https://whale-pools-paper-staging.mrarwyn.workers.dev/whalepools/');
 if(!['https:','http:'].includes(base.protocol)||base.username||base.password||base.search||base.hash)throw Error('Use a plain public app base URL.');
 if(!base.pathname.endsWith('/'))base.pathname+='/';
@@ -13,10 +14,17 @@ if(reads.every(r=>r.status==='fulfilled')){
  check('Exact paper rules',paper.enabled&&paper.rulesHash===paperRules.ruleHash,paper.rulesHash);
  check('Exact Daily Tide rules',tide.enabled&&tide.rulesHash===tideRules.ruleHash,tide.rulesHash);
  check('Recorder currently healthy',!paper.feed?.error&&!paper.feed?.halted&&paper.feed?.stale===false&&checkedAt-paper.feed.last_ok<180000,{lastOk:paper.feed?.last_ok,error:paper.feed?.error,halted:paper.feed?.halted,stale:paper.feed?.stale});
- check('Three original public preset watches',paper.labs.length===3&&paper.labs.every(r=>r.rulesHash===paperRules.ruleHash),paper.labs.map(r=>({id:r.id,createdAt:r.createdAt,status:r.status,observedBars:r.observedBars,gapBars:r.gapBars})));
+ check('Three current dated public preset watches',paper.labs.length===3&&paper.labs.every(r=>r.rulesHash===paperRules.ruleHash&&r.status==='running'&&r.endsAt>checkedAt),paper.labs.map(r=>({id:r.id,createdAt:r.createdAt,endsAt:r.endsAt,status:r.status,observedBars:r.observedBars,gapBars:r.gapBars})));
  const completed=tide.rounds.filter(r=>r.status==='completed');check('A real complete Daily Tide round is visible',completed.some(r=>r.quality==='complete'),completed.map(r=>({id:r.id,quality:r.quality})));
- const ageDays=paper.labs.length?Math.min(...paper.labs.map(r=>(checkedAt-r.createdAt)/86400000)):0;
- check('At least seven days since preset watches began',ageDays>=7,{ageDays,meaning:'Age only. Review daily evidence for continuity; elapsed time alone does not prove recorder reliability.'});
+ try{
+  const first=await get('api/paper/coverage').then(r=>r.json()),days=first.days.slice(0,14),results=[first];
+  for(let i=1;i<days.length;i+=3){
+   const batch=await Promise.allSettled(days.slice(i,i+3).map(day=>get('api/paper/coverage?day='+day).then(r=>r.json())));
+   for(let j=0;j<batch.length;j++)results.push(batch[j].status==='fulfilled'?batch[j].value:{day:days[i+j],error:batch[j].reason.message});
+  }
+  report.recorderDiary=diarySummary(results,{rulesHash:paperRules.ruleHash,checkedAt:Date.now()});
+  check('Seven consecutive clean completed UTC days',report.recorderDiary.sevenDayCoverageGate,{consecutiveCleanDays:report.recorderDiary.consecutiveCleanDays,meaning:'Actual saved receipt and all-three-watch decisions across dated cohorts. Watch age and renewal do not establish continuity.'});
+ }catch(error){check('Seven consecutive clean completed UTC days',false,{error:error.message});}
  if(paper.labs[0]){
   const run=paper.labs[0];const detail=await Promise.allSettled([get('watch/'+run.id).then(r=>r.text()),get('api/paper/recap/'+run.id).then(r=>r.json())]);
   check('Public share metadata',detail[0].status==='fulfilled'&&detail[0].value.includes('property="og:title"')&&detail[0].value.includes('rel="canonical"'),detail[0].status==='fulfilled'?'Server HTML has canonical and dated preview metadata':detail[0].reason.message);
