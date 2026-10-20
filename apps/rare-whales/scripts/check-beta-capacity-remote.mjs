@@ -11,7 +11,10 @@ assert.ok(origin && token, 'Supply --url= and --secrets-file=, or CAPACITY_URL a
 assert.match(new URL(origin).hostname, /^whalepools-beta-capacity-[a-z0-9-]+\.mrarwyn\.workers\.dev$/, 'Only the dedicated disposable capacity Worker is allowed.');
 const cohortSizes = option('holders') ? [Number(option('holders'))] : [10, 20];
 assert.ok(cohortSizes.every(n => [10, 20].includes(n)));
-let clock = Date.UTC(2026, 9, 20, 12) + 1000;
+// A new rehearsal must begin after an earlier coordinator checkpoint. Keep an
+// explicit clock option for repeat runs; never reset durable truth to replay it.
+let clock = option('start') ? Date.parse(option('start')) : Math.floor(Date.now() / 300000) * 300000 + 1000;
+assert.ok(Number.isSafeInteger(clock) && clock > 0, 'Use a valid ISO timestamp for --start=.');
 const round = n => Math.round(n * 100) / 100;
 const request = async (path, {method = 'GET', body, session} = {}) => {
   const started = performance.now();

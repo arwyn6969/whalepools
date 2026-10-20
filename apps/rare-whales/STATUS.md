@@ -1,8 +1,14 @@
 # Whale Pools current development status
 
-Updated 16 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
+Updated 20 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
 
-## Integrated release candidate and current gates
+## Closed beta recorder and capacity update · 20 October
+
+Implementation `ba2d82b` is deployed only to isolated staging as `ae3e879b-3560-4a8b-8da8-9c166e6f47c3`. Atomic recorder commits, bounded history work, prospective reference renewal and sixteen read executors are verified. 234 tests, five compiled runtime suites and CI pass. Cloud fixtures pass at 10/20 holders × 12 whales × 3,800 fractional history points, including concurrent reads/archive; sampled outer paper CPU is 3 ms. All 23 assets and old records match. [Review and limits](docs/CLOSED_BETA_RECORDER_REVIEW.md).
+
+MetaMask marked issue #303173 resolved on 19 October; actual wallet retest remains open. Four completed clean days on 16–19 October precede today's 12:35 valuation-only observation, so the seven-day gate remains false. Real desktop/mobile/operator acceptance and observed pilot remain open. Production, billing, rule hashes and existing D1/recorder records are preserved. Earlier dated evidence below remains historical.
+
+## Integrated release candidate and gates · 16 October (historical)
 
 `codex/release-readiness` combines the holder/playtest stack through PR #14 with the separate maintenance branch. The STATUS.md add/add conflict retains the latest product record. Wrangler 4.151.1, Miniflare 5.20261012.1-beta, sharp 0.35.5 and Undici 7.29.1 address the current development-tool advisories. Exact viem, esbuild, solc and OpenZeppelin lock entries are preserved. Both current dependency audits report zero vulnerabilities.
 
