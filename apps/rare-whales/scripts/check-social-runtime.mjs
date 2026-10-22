@@ -8,8 +8,10 @@ const {Miniflare,convertV4MiniflareOptions}=await import(pathToFileURL(wranglerR
 const paper=JSON.parse(await readFile(new URL('../build/public/paper-rules.json',import.meta.url))),tide=JSON.parse(await readFile(new URL('../build/public/tide-rules.json',import.meta.url)));
 assert.equal(paper.ruleHash,'e2a7f52280106d1b0a97080f821fab64bf8a3568b13fb63ce54e77f7b03c1b97');
 await mkdir(new URL('../work/',import.meta.url),{recursive:true});
-// Only this ignored wrapper can override the scheduler clock; the public Worker cannot.
-const source=`import worker from '../build/cloudflare-worker.mjs';import {tickPaper} from '../src/paper-recorder.mjs';import {tickTide} from '../src/daily-tide.mjs';export default {...worker,async fetch(request,env){if(new URL(request.url).pathname==='/__test/social-tick'){const now=Number(request.headers.get('fixture-now'));const paper=await tickPaper(env,{rulesHash:${JSON.stringify(paper.ruleHash)},now});const tide=await tickTide(env,{rulesHash:${JSON.stringify(tide.ruleHash)},paperHash:${JSON.stringify(paper.ruleHash)},now});return Response.json({paper,tide});}return worker.fetch(request,env);}};`;
+// These ignored wrappers control both scheduler and read clocks. Install the
+// clock before module initialization, when API services capture Date.now.
+await writeFile(new URL('../work/social-runtime-clock.mjs',import.meta.url),`let now=Date.UTC(2026,9,7,12)+1000;Date.now=()=>now;export function setFixtureNow(value){if(!Number.isFinite(value))throw Error('Invalid fixture clock');now=value;}`);
+const source=`import {setFixtureNow} from './social-runtime-clock.mjs';import worker from '../build/cloudflare-worker.mjs';import {tickPaper} from '../src/paper-recorder.mjs';import {tickTide} from '../src/daily-tide.mjs';export default {...worker,async fetch(request,env){const fixtureNow=request.headers.get('fixture-now');if(fixtureNow!==null)setFixtureNow(Number(fixtureNow));if(new URL(request.url).pathname==='/__test/social-tick'){const now=Number(fixtureNow);const paper=await tickPaper(env,{rulesHash:${JSON.stringify(paper.ruleHash)},now});const tide=await tickTide(env,{rulesHash:${JSON.stringify(tide.ruleHash)},paperHash:${JSON.stringify(paper.ruleHash)},now});return Response.json({paper,tide});}return worker.fetch(request,env);}};`;
 await writeFile(new URL('../work/social-runtime-entry.mjs',import.meta.url),source);
 await build({entryPoints:[fileURLToPath(new URL('../work/social-runtime-entry.mjs',import.meta.url))],outfile:fileURLToPath(new URL('../work/social-runtime-worker.mjs',import.meta.url)),bundle:true,format:'esm',platform:'browser',target:'es2022'});
 const interval=300000,base=Date.UTC(2026,9,7,12),start=Date.UTC(2026,9,8);let clock=base+1000,marketFail=false;
@@ -34,7 +36,7 @@ try{
  for(const p of ['/api/tide','/api/paper/history'])assert.equal((await mf.dispatchFetch(url+p,{headers:{'sec-fetch-site':'cross-site'}})).status,403);
  assert.equal((await mf.dispatchFetch(url+'/api/tide/join',{method:'POST',headers:{origin:'https://arwyn.party','content-type':'application/json'},body:'{}'})).status,401);
  const token='33'.repeat(32),address='0x'+'3'.repeat(40),sessionHash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex');
- await db.prepare('INSERT INTO rw_sessions(hash,address,expires) VALUES(?,?,?)').bind(sessionHash,address,Date.now()+60000).run();
+ await db.prepare('INSERT INTO rw_sessions(hash,address,expires) VALUES(?,?,?)').bind(sessionHash,address,clock+60000).run();
  const reference=(await db.prepare('SELECT id FROM wp_paper_runs LIMIT 1').first()).id,run='33333333-3333-4333-8333-333333333333';
  // Keep the public reference cohort intact while exercising a holder archive.
  await db.prepare('INSERT INTO wp_paper_runs(id,wallet,nickname,input_json,rules_hash,created_at,ends_at,status,state_json) SELECT ?,?,nickname,input_json,rules_hash,created_at,ends_at,status,state_json FROM wp_paper_runs WHERE id=?').bind(run,address,reference).run();
@@ -53,7 +55,7 @@ try{
  const recapState=JSON.stringify({history:[{t:closed,observedAt:closed+1000,equity:998,hold:999,price:200,actionable:true}],agents:[{collection:'rarewhales',tokenId:247,preset:'trend',profile:{name:'Cruiser'},qty:0,cash:998,tradeCount:1}],maxDrawdown:.2,exposureSum:0,observedBars:1,gapBars:0});
  await db.prepare("INSERT INTO wp_paper_runs(id,wallet,nickname,input_json,rules_hash,created_at,ends_at,status,state_json) VALUES(?,?,?,?,?,?,?,?,?)").bind(recapId,address,'Runtime dated watch','{}',paper.ruleHash,recapStart,recapStart+1209600000,'stopped',recapState).run();
  await db.prepare('INSERT INTO wp_paper_events(run_id,bar_t,ordinal,event_json) VALUES(?,?,?,?)').bind(recapId,recapStart,0,JSON.stringify({kind:'sell',agent:0,at:closed+1000,qty:1,price:199.9,fee:.16,pnl:-2,reason:'Recorded fixture exit'})).run();
- const coverageResponse=await mf.dispatchFetch(url+'/api/paper/coverage');assert.equal(coverageResponse.status,200);const coverage=await coverageResponse.json();assert.equal(coverage.rulesHash,paper.ruleHash);assert.ok(coverage.closes.length<=288);assert.equal(coverage.reference.watches,3);assert.doesNotMatch(JSON.stringify(coverage),/wallet|input_json|state_json|nickname/);
+ const coverageResponse=await mf.dispatchFetch(url+'/api/paper/coverage');assert.equal(coverageResponse.status,200);const coverage=await coverageResponse.json();assert.equal(coverage.checkedAt,clock);assert.equal(coverage.day,'2026-10-09');assert.equal(coverage.rulesHash,paper.ruleHash);assert.ok(coverage.closes.length<=288);assert.equal(coverage.reference.watches,3);assert.doesNotMatch(JSON.stringify(coverage),/wallet|input_json|state_json|nickname/);
  assert.equal((await mf.dispatchFetch(url+'/api/paper/coverage?day=2026-02-30')).status,400);assert.equal((await mf.dispatchFetch(url+'/api/paper/coverage',{headers:{'sec-fetch-site':'cross-site'}})).status,403);
  const beforeWatch=await db.prepare('SELECT * FROM wp_paper_runs WHERE id=?').bind(recapId).first();
  const recapResponse=await mf.dispatchFetch(url+'/api/paper/recap/'+recapId);assert.equal(recapResponse.status,200);const recap=await recapResponse.json();assert.equal(recap.sells,1);assert.equal(recap.change,-2);assert.equal(recap.coverage.expected,1);assert.equal(recap.balance,998);assert.equal(recap.status,'stopped');assert.equal('owner' in recap,false);
@@ -69,6 +71,9 @@ try{
  assert.deepEqual(await db.prepare('SELECT * FROM wp_paper_runs WHERE id=?').bind(recapId).first(),beforeWatch);
  // Trigger the actual scheduled handler; a caught engine error must fail the invocation.
  clock=Date.now();const schedule='http://localhost/cdn-cgi/local/scheduled?cron=*+*+*+*+*&format=json';
+ // Miniflare dispatches its scheduling endpoint without calling the fetch
+ // wrapper, so first advance the isolate clock with an ordinary read.
+ assert.equal((await mf.dispatchFetch(url+'/api/tide?round='+roundId,{headers:{'fixture-now':String(clock)}})).status,200);
  const scheduled=await mf.dispatchFetch(schedule);assert.equal(scheduled.status,200);assert.equal((await scheduled.json()).outcome,'ok');
  marketFail=true;const failed=await mf.dispatchFetch(schedule);assert.equal(failed.status,500);assert.notEqual((await failed.json()).outcome,'ok');marketFail=false;
  console.log(JSON.stringify({passed:true,runtime:'actual workerd and D1',fixtures:true,realEligibleWallet:false,paperHash:paper.ruleHash,tideHash:tide.ruleHash,checks:['additive migrations','prospective queue','shared observed candles','atomic ledger and duplicate tick','public API and exact rules asset','private session archive','invalid cursor','cross-origin and unsigned writes rejected','partial final results without ranks','bounded public recorder receipt and decision coverage in actual D1','invalid UTC day and cross-site coverage rejected','public daily ledger recap without mutations','invalid UTC day and cross-site recap rejected','compressed-shell server share metadata and HEAD','PNG cover MIME and bytes','actual scheduled success and caught-error failed invocation']}));

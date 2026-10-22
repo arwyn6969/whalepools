@@ -11,7 +11,7 @@ export function downloadLocal(value,type,name){
  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 export function installFleetSocial({api,context,signIn,refreshInventory}){
- const pilot=createLivePilot(storage),originalRibbon=$('.demo-ribbon').innerHTML;
+ const pilot=createLivePilot(storage),originalRibbon='<span>FREE HISTORICAL ARCADE</span> Build a crew · replay history · publish your score <a href="#crew">VIEW LEADERBOARD ↗</a>';
  let page=null,viewId=null,wallet=null,epoch=0,own=null,known=false,ownLoading=false,attempt=null,confirmedRun=null;
  let archiveRows=[],archiveNext=null,archiveLoaded=false,archiveLoading=false,archiveOwnKey='';
  let tideData=null,tideLoading=false,tideTimer,acting=false,mutation=null,shownRound=null;
@@ -189,9 +189,12 @@ export function installFleetSocial({api,context,signIn,refreshInventory}){
    const live=['paper','tide','live-pilot'].includes(next);
    $('#footer-pilot').href=live?'#live-pilot':'#pilot';
    if(next==='tide'||next==='live-pilot'){
-    $('.demo-ribbon').innerHTML='<span>LIVE PAPER BETA</span> Your company · a common daily tide · new observations <a href="#paper">RETURN TO MY FLEET ↗</a>';
-    $('footer>span').textContent='RARE WHALES + WHALESTREET · LIVE PAPER BETA';
-   }else if(next!=='paper')$('.demo-ribbon').innerHTML=originalRibbon;
+    $('.demo-ribbon').innerHTML='<span>EXPERIMENTAL PAPER BETA</span> Live prices · simulated money · no wallet transactions <a href="#paper">RETURN TO MY FLEET ↗</a>';
+    $('footer>span').textContent='RARE WHALES + WHALESTREET · EXPERIMENTAL PAPER BETA';
+   }else if(next!=='paper'){
+    $('.demo-ribbon').innerHTML=originalRibbon;
+    $('footer>span').textContent='RARE WHALES + WHALESTREET · FREE HISTORICAL ARCADE';
+   }
    sync();if(next==='tide')loadTide();if(next==='live-pilot'){renderPilot();if(context().address)loadOwn();}
    if(next==='paper'&&!id&&!archiveLoaded)loadArchive();
   }

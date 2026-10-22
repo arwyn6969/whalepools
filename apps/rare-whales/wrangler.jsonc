@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "whale-pools-demo",
-  "main": "./build/cloudflare-worker.mjs",
+  "main": "./build/paper-worker.mjs",
   "compatibility_date": "2026-09-21",
   "workers_dev": false,
   "preview_urls": false,
@@ -25,8 +25,21 @@
   ],
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 0.1
+    "head_sampling_rate": 0.1,
+    "redact_query_string": true,
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 }
   },
+  "triggers": { "crons": ["* * * * *"] },
+  "durable_objects": {
+    "bindings": [
+      { "name": "PAPER_RECORDER", "class_name": "PaperRecorder" },
+      { "name": "PAPER_READS", "class_name": "PaperReadExecutor" }
+    ]
+  },
+  "migrations": [
+    { "tag": "recorder-sqlite-v1", "new_sqlite_classes": ["PaperRecorder"] },
+    { "tag": "paper-reads-sqlite-v1", "new_sqlite_classes": ["PaperReadExecutor"] }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -36,6 +49,12 @@
     }
   ],
   "vars": {
+    "BASE_PATH": "/whalepools",
+    "PAPER_ENABLED": "1",
+    "TIDE_ENABLED": "1",
+    "RECORDER_MODE": "durable-object",
+    "PAPER_READ_MODE": "durable-object",
+    "APP_ORIGIN": "https://arwyn.party",
     "RPC_URL": "https://robinhood.drpc.org"
   }
 }
