@@ -1,6 +1,12 @@
 # Whale Pools current development status
 
-Updated 20 October 2026. Production remains the free Historical Arcade v1 described in ARCADE.md. The new Live Whale Fleet beta and its stacked holder/sharing candidates are deployed only to isolated staging for review. WWAX remains deferred and undeployed. The original founding paper season remains draft; this new beta has separate rules, start times and records.
+Updated 22 October 2026. The owner requested the public experimental paper beta at https://arwyn.party/whalepools/. Production now uses the tested paper bundle, separate production recorder/read namespaces and the existing arcade database/routes. The first page is paper mode; the historical arcade and its records remain available. WWAX remains deferred and undeployed. The original founding season remains draft.
+
+## Public experimental paper beta · 22 October
+
+Production version `b7a9f644-50b9-4ada-aed9-07bcfa24a881` is deployed. 234 unit/HTTP tests, five actual runtime suites, frozen 23-asset build and production dry run pass. Six idempotent migrations were rehearsed against a private export, then applied remotely; exact existing row digests are preserved after deployment. All zone routes and query-string redaction are preserved; tracing is enabled. Production starts new prospective reference watches and queues the next UTC Tide rather than importing staging history. Post-deploy cron warmup and public saved-close verification are being recorded. [Launch/restart/rollback and remaining evidence](docs/PUBLIC_PAPER_BETA.md).
+
+Real Chrome/MetaMask desktop then MetaMask mobile acceptance remains unobserved. Longer clean-day evidence and real pilot participation/returns remain incomplete; this is a public experimental release, not a reliability or performance certification. Previous staging-only release gates below are dated history.
 
 ## Closed beta recorder and capacity update · 20 October
 
