@@ -1,10 +1,10 @@
 # Whale Pools
 
-Build a company of NFT whale traders. Pick your whales, inspect their fixed DNA and explore historical paper results.
+Build a company of NFT whale traders. Pick your whales, inspect their fixed DNA and watch new market prices with simulated money.
 
-**[Play the demo](https://arwyn.party/whalepools/)** · **[Arcade rules](apps/rare-whales/ARCADE.md)** · **[Technical guide](apps/rare-whales/README.md)**
+**[Try the paper beta](https://arwyn.party/whalepools/)** · **[Arcade rules](apps/rare-whales/ARCADE.md)** · **[Technical guide](apps/rare-whales/README.md)**
 
-This is a free historical arcade with wallet login and server-verified company scores. Own one NFT from either collection to publish a crew; anyone can try the sandbox. Scores use inspected historical data and do not prove trading skill. There are no payments, token rewards, staking, deposits or live orders. WWAX is deferred and undeployed.
+Whale Pools is an experimental public paper beta, limited to 20 active holder companies. Anyone can inspect the preset watches; own one NFT from either collection to start a $1,000 simulated watch. Live prices and recorder gaps are recorded prospectively. Real-wallet/device acceptance and longer reliability evidence remain incomplete. The separate free historical arcade retains its inspected-data scores. Neither mode proves trading skill. There are no payments, token rewards, staking, deposits or real orders. WWAX is deferred and undeployed. See the [public beta runbook](apps/rare-whales/docs/PUBLIC_PAPER_BETA.md).
 
 ## Run locally
 

@@ -3,9 +3,32 @@ import scores from '../build/arcade-scores.json' with {type:'json'};
 import {createApi} from './api.mjs';
 import {createArcadeBoard} from './arcade-board.mjs';
 import {demoFetch,demoHeaders} from './demo-worker.mjs';
-const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),api=createApi({season,board});
+import {createPaperService} from './paper-service.mjs';
+import {createPaperReadService,createPaperArchiveReadService} from './paper-read-service.mjs';
+import {tickPaper} from './paper-recorder.mjs';
+import paperRules from '../build/public/paper-rules.json' with {type:'json'};
+import tideRules from '../build/public/tide-rules.json' with {type:'json'};
+import {createFleetSocialService} from './fleet-social-service.mjs';
+import {tickTide} from './daily-tide.mjs';
+import {createWatchRecaps} from './watch-recap.mjs';
+import {createRecorderCoverage} from './recorder-coverage.mjs';
+import {scheduleRecorder} from './recorder-coordinator.mjs';
+import {watchPreview} from './watch-preview.mjs';
+import {tidePreview} from './tide-preview.mjs';
+import {forwardPaperRead} from './paper-read-routing.mjs';
+const board=createArcadeBoard({season,scores,ruleHash:scores.ruleHash}),paper={...createPaperService({season,rulesHash:paperRules.ruleHash}),...createPaperReadService({rulesHash:paperRules.ruleHash})};
+const social={...createFleetSocialService({season,paperHash:paperRules.ruleHash,tideHash:tideRules.ruleHash}),...createPaperArchiveReadService()},recaps=createWatchRecaps({rulesHash:paperRules.ruleHash}),recorder=createRecorderCoverage({rulesHash:paperRules.ruleHash}),api=createApi({season,board,paper,social,recaps,recorder});
+export async function launchTick(env){
+ const result=await tickPaper(env,{rulesHash:paperRules.ruleHash});
+ if(result.busy)return result;
+ const tide=await tickTide(env,{paperHash:paperRules.ruleHash,rulesHash:tideRules.ruleHash});
+ return {...result,tide};
+}
 export async function launchFetch(request,env){
  const url=new URL(request.url),base=env.BASE_PATH??'/whalepools';
+ const forwarded=await forwardPaperRead(request,env,base);if(forwarded)return forwarded;
+ if(url.pathname.startsWith(base+'/watch/'))return watchPreview(request,env,{paper,base,recaps});
+ if(url.pathname.startsWith(base+'/tide/'))return tidePreview(request,env,{social,base});
  if(url.pathname.startsWith(base+'/api/')){
   const path=url.pathname.slice(base.length),origin=env.APP_ORIGIN||'https://arwyn.party';
   url.pathname=path;
@@ -15,4 +38,7 @@ export async function launchFetch(request,env){
  }
  return demoFetch(request,env);
 }
-export default {fetch:launchFetch};
+export function launchScheduled(controller,env,ctx){
+ ctx.waitUntil(scheduleRecorder(controller,env,{tick:launchTick,name:'market-v1:'+paperRules.ruleHash+':'+tideRules.ruleHash}));
+}
+export default {fetch:launchFetch,scheduled:launchScheduled};

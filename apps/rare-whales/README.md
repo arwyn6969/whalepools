@@ -2,7 +2,9 @@
 
 RW-009, 21 September 2026. A **public paper-trading demo**: the wallet is the owner, a pool is its company, and the NFTs it owns are its trading agents. This supersedes RW-001's one-agent desk model. The free arcade has its own one-NFT access rule. No token, live trader, company season or pooled deposits have launched.
 
-**Free arcade launch:** wallet sign-in, fresh NFT ownership checks, server-calculated historical scores, editable public company entries and withdrawal are implemented. The public game requires one Rare Whales or WhaleStreet NFT to publish; anyone can use the sandbox. The original founding-season membership rules are preserved separately. Wax and payments are deferred; prepared contracts remain undeployed. See [ARCADE.md](ARCADE.md) for current rules, data, transfer policy and operations.
+**Public experimental paper beta · 22 October 2026:** the production landing page is now the live paper fleet, with 20 active holder companies, three public preset watches and the existing historical arcade preserved. Real-wallet/device acceptance and longer reliability evidence remain incomplete. See [public beta operations and rollback](docs/PUBLIC_PAPER_BETA.md).
+
+**Historical arcade:** wallet sign-in, fresh NFT ownership checks, server-calculated historical scores, editable public company entries and withdrawal are implemented. The public game requires one Rare Whales or WhaleStreet NFT to publish; anyone can use the sandbox. The original founding-season membership rules are preserved separately. Wax and payments are deferred; prepared contracts remain undeployed. See [ARCADE.md](ARCADE.md) for current rules, data, transfer policy and operations.
 
 ## Run
 
@@ -65,9 +67,9 @@ Data: inspected UBTC/USDC Hyperliquid spot candles, 1h with 4h signal context, *
 
 ## Hosting and next milestone
 
-The free arcade runs at [arwyn.party/whalepools](https://arwyn.party/whalepools/) through the separate `whale-pools-demo` Worker. Routes `/whalepool` and `/whalepool/*` redirect to the plural form, preserving query and path. The Worker has one dedicated D1 binding for authentication and historical leaderboard entries. Eighteen explicitly allowed assets are embedded as gzip data. There are no server transaction endpoints, token deployment, cron jobs or paid subscriptions introduced by this release; unrelated owner APIs and databases are untouched.
+The public experimental paper beta and separate historical arcade run at [arwyn.party/whalepools](https://arwyn.party/whalepools/) through `whale-pools-demo`. Routes `/whalepool` and `/whalepool/*` redirect to the plural form, preserving query and path. Its existing dedicated D1 database retains authentication and historical entries alongside additive paper/Tide tables. Twenty-three explicitly allowed assets are embedded as gzip data. A minute cron wakes the SQLite recorder; sixteen read executors handle paper reads. Staging uses separate resources. There are no wallet transaction endpoints, token deployment or paid-plan changes.
 
-`npm run build:demo` generates `build/cloudflare-worker.mjs`; `npm run deploy:check` validates the Wrangler candidate and `npm run deploy` publishes it using an authenticated Cloudflare CLI. The initial deployment can also use the Cloudflare API plugin with the same ES module and metadata. `wrangler.jsonc` is the reproducible deployment configuration. The original authenticated prototype remains in `src/worker.mjs` and is not imported into the demo bundle.
+`npm run build:demo` generates the production/staging `build/paper-worker.mjs` with both Durable Object exports, plus the plain `build/cloudflare-worker.mjs` used by asset checks; `npm run deploy:check` validates the Wrangler candidate and `npm run deploy` publishes it using an authenticated Cloudflare CLI. The initial deployment can also use the Cloudflare API plugin with the same ES module and metadata. `wrangler.jsonc` is the reproducible deployment configuration. The original authenticated prototype remains in `src/worker.mjs` and is not imported into the demo bundle.
 
 Before a season opens: finalize identities and snapshot behavior; implement a prospective market recorder, incremental paper execution, missing-data status and dated pool outcomes; freeze a separate specification and genuinely future dates; and test a real holder's wallet journey and the new recording system on a separate candidate. The current app has **no running season or automated live trader**. Editing the season status does not create those missing records. It supports historical exploration only.
 
@@ -92,3 +94,11 @@ The Tactic Arcade compares all four tactics for the selected whale, using the sa
 The Wax Lab uses original SVG pixel illustrations for a 90s-inspired Whale Wax surf tub, upright surfboard, neon-green Holy Brick of Kek and gemmed crown. Rebuild the art with `node scripts/draw-wax-art.mjs`. These are original game illustrations, not copied surf-wax packaging.
 
 RW-009 removes the Wax Lab from the public game. Its earlier fit check was an ephemeral visual preview of Surfboard, Holy Brick of Kek and Captain’s Drip. None is purchasable or minted. A historical arcade leaderboard is available; prospective season and ENS displays remain planned. Public owners are verified wallet addresses, never guessed ENS names. See [ECONOMY.md](ECONOMY.md) for the staking review, weak spots, build order and effort estimates.
+
+## Holder journey candidate · 6 October 2026
+
+The WP-02/WP-03 candidate is on `codex/holder-company-journey`. Read [HOLDER_JOURNEY_REVIEW.md](docs/HOLDER_JOURNEY_REVIEW.md) for private drafts, inventory recovery, spectator inspection, local previews, fixture browser regressions, migration/rollback notes and the remaining real-wallet acceptance gate. Maintenance PR #1 remains separate; this sprint is not a production release.
+
+## Sharing, challenge and pilot candidate · 6 October 2026
+
+The stacked `codex/share-challenge-pilot` candidate adds stable public company links, historical SVG share cards, private-safe comparisons, the separate Tidal Trio v1 loaner challenge, and optional local pilot reports. Read [NEXT_SPRINT_REVIEW.md](docs/NEXT_SPRINT_REVIEW.md) for checks/limits and [HOLDER_PILOT.md](docs/HOLDER_PILOT.md) for the ten-holder protocol. Production release, real wallet acceptance and observed seven-day adoption remain separate.
